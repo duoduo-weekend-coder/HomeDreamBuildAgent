@@ -244,6 +244,12 @@
   .dialog-actions .spacer { flex: 1; }
   .status-line { font-size: 13px; margin-top: 8px; }
   .ok-text { color: var(--ok); }
+  .header-actions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+  .instagram-status { margin-top: 12px; max-width: 65ch; font-size: 14px; }
+  .instagram-status:empty { display: none; }
+  #igCaption { min-height: 130px; }
+  #igPublishDialog .selected-video { padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+  #igPublishDialog small { display: block; color: var(--muted); }
 
   @media (max-width: 960px) {
     .home, .job, .building { grid-template-columns: 1fr; gap: 36px; }
@@ -261,9 +267,11 @@
 <body>
 <header>
   <a class="wordmark" href="#">Home Video Studio</a>
+  <div class="header-actions">
+  <button id="instagramSettingsBtn" class="ghost" type="button">Instagram settings</button>
   <button id="settingsBtn" class="ghost icon-btn" type="button">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
-    Voice settings</button>
+    Voice settings</button></div>
 </header>
 <main id="view"></main>
 
@@ -288,6 +296,50 @@
     <button type="button" onclick="settings.close()">Close</button>
     <button id="saveSettings" class="go" type="button">Save</button>
   </div>
+</dialog>
+
+<dialog id="igSettingsDialog" aria-labelledby="igSettingsTitle">
+  <form id="igSettingsForm">
+    <h2 id="igSettingsTitle">Instagram settings</h2>
+    <p class="hint">Connect an Instagram Business or Creator account to publish finished videos.</p>
+    <p class="hint">Link your professional Instagram account to a Facebook Page. Use a Page access token from a Meta app configured for Facebook Login for Business.</p>
+    <label for="igUserId">Instagram account ID</label>
+    <input id="igUserId" type="text" inputmode="numeric" pattern="[0-9]+" required autocomplete="off" placeholder="Your numeric professional account ID">
+    <label for="igToken" id="igTokenLabel">Facebook Page access token</label>
+    <input id="igToken" type="password" autocomplete="off" placeholder="Paste a token; leave blank to keep the saved token">
+    <p class="hint">Saved on this Mac. The token is never sent back to the browser.</p>
+    <details class="more"><summary>API setup</summary>
+      <p class="hint">Token permissions: instagram_basic, instagram_content_publish and pages_read_engagement. Use the linked Instagram account ID, not the Page ID.</p>
+      <p class="hint">For testing, use an account authorized to test your Meta app. Publishing for other accounts requires Meta's access review.</p>
+      <p class="hint"><a href="https://developers.facebook.com/documentation/instagram-platform/content-publishing/resumable-uploads" target="_blank" rel="noopener noreferrer">Meta's publishing setup guide</a></p>
+      <label for="igVersion">Graph API version</label><input id="igVersion" type="text" value="v23.0" pattern="v[0-9]+\.0" required>
+    </details>
+    <div id="igSettingsStatus" class="status-line" role="status"></div>
+    <div id="igSettingsError" class="error" role="alert"></div>
+    <div class="dialog-actions"><span class="spacer"></span>
+      <button type="button" id="igSettingsClose">Close</button>
+      <button class="go" id="igSettingsSave" type="submit">Save &amp; check account</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="igPublishDialog" aria-labelledby="igPublishTitle">
+  <form id="igPublishForm">
+    <h2 id="igPublishTitle">Post to Instagram</h2>
+    <p class="hint">Review your Reel before posting. It will appear in your account's feed and Reels tab.</p>
+    <div class="selected-video"><b id="igVideoName"></b><small id="igVideoFile"></small></div>
+    <p id="igAccount" class="status-line" role="status"></p>
+    <button type="button" class="link" id="igConnect">Instagram settings</button>
+    <label for="igCaption">Caption</label>
+    <textarea id="igCaption" maxlength="2200"></textarea>
+    <div class="hint" id="igCaptionCount">0 / 2,200 characters</div>
+    <p class="hint" id="igLocalUpload">The selected video will upload directly from this Mac to Meta when you publish. No public link is needed.</p>
+    <div id="igPublishError" class="error" role="alert"></div>
+    <div class="dialog-actions"><span class="spacer"></span>
+      <button type="button" id="igPublishClose">Cancel</button>
+      <button type="submit" class="go" id="igPublishSubmit" disabled>Publish Reel</button>
+    </div>
+  </form>
 </dialog>
 
 <script>
@@ -565,7 +617,7 @@ let refreshJobs = () => {};
 
 async function jobView(id) {
   const st = { since: 0, outputsKey: "", summary: null, selected: null, outputs: [], stage: 0, started: null,
-               wasBusy: null, lastSay: "", lastTool: "", job: null };
+               wasBusy: null, lastSay: "", lastTool: "", job: null, instagramPosts: [] };
   $("#view").innerHTML = `
     <a class="back" href="#"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>All videos</a>
     <div class="job-head">
@@ -640,6 +692,10 @@ async function jobView(id) {
   $("#stage").addEventListener("click", e => {
     const b = e.target.closest("[data-pick]");
     if (b) { st.selected = b.dataset.pick; renderOutputs(); }
+    if (e.target.closest("[data-instagram]")) {
+      const output = st.outputs.find(o => o.name === st.selected);
+      if (output) openInstagramPublish(id, output);
+    }
   });
 
   function addEvent(ev) {
@@ -708,7 +764,9 @@ async function jobView(id) {
         <video controls preload="metadata" playsinline src="${cur.url}" ${cur.poster ? `poster="${cur.poster}"` : ""} style="aspect-ratio:${d.w}/${d.h}"></video>
         <div class="under"><b>${esc(d.label)}</b>
           <a href="${cur.url}" download="${esc(cur.name)}">Download</a>
-          ${cur.metadata_md ? `<a href="${cur.metadata_md}" target="_blank" rel="noopener">Metadata</a>` : ""}</div>
+          ${cur.metadata_md ? `<a href="${cur.metadata_md}" target="_blank" rel="noopener">Metadata</a>` : ""}
+          <button type="button" class="go" data-instagram ${st.job?.status !== "done" ? "disabled" : ""}>Post to Instagram</button></div>
+        <div id="instagramPostStatus" class="instagram-status" role="status" aria-live="polite"></div>
       </div>
       ${outs.length > 1 ? `<div class="thumbs" role="group" aria-label="Other versions">${outs.map(o => { const od = describeVideo(o.name); return `
         <button type="button" data-pick="${esc(o.name)}" aria-pressed="${o.name === st.selected}">
@@ -720,6 +778,25 @@ async function jobView(id) {
     $("#shotsSec").hidden = !(cur.shots || []).length;
     $("#shots").innerHTML = `<table><thead><tr><th>Time</th><th>On screen</th><th>Footage</th></tr></thead><tbody>${(cur.shots || []).map(s => `
       <tr><td>${Math.round(s.start)}–${Math.round(s.end)} s</td><td>${esc(s.text)}</td><td class="files">${esc(s.files.join(", "))}</td></tr>`).join("")}</tbody></table>`;
+    renderInstagramStatus();
+  }
+
+  function renderInstagramStatus() {
+    const el = $("#instagramPostStatus");
+    if (!el) return;
+    const cur = st.outputs.find(o => o.name === st.selected);
+    const post = [...st.instagramPosts].reverse().find(p => p.filename === cur?.name && p.version === cur?.version);
+    const label = { queued: "Waiting to post…", creating: "Preparing your Reel on Instagram…", uploading: "Uploading your video from this Mac to Meta…",
+      processing: "Instagram is processing your video…", publishing: "Publishing your Reel…",
+      published: "Published to Instagram.", failed: "Instagram posting failed.", unknown: "Posting needs a check." };
+    el.innerHTML = post ? `${esc(label[post.status] || post.status)} ${post.permalink ? `<a href="${esc(post.permalink)}" target="_blank" rel="noopener noreferrer">View Reel</a>` : ""}
+      ${post.error ? `<div class="error">${esc(post.error)}</div>` : ""}
+      ${post.media_id ? `<div class="hint">Account ${esc(post.user_id)} · Post ${esc(post.media_id)}</div>` : ""}` : "";
+    const btn = $("[data-instagram]", $("#stage"));
+    if (btn) {
+      btn.disabled = st.job?.status !== "done" || !!(post && post.status !== "failed");
+      btn.textContent = post?.status === "published" ? "Posted to Instagram" : post?.status === "failed" ? "Try posting again" : "Post to Instagram";
+    }
   }
 
   async function poll() {
@@ -727,6 +804,7 @@ async function jobView(id) {
     try { j = await api(`/api/jobs/${id}?since=${st.since}`); }
     catch (err) { $("#stage").innerHTML = `<div class="msg error">${esc(err.message)}</div>`; return; }
     st.job = j;
+    st.instagramPosts = j.instagram_posts || [];
     if (st.since === 0) {
       const r = j.request;
       $("#jTitle").textContent = jobName(j);
@@ -742,7 +820,7 @@ async function jobView(id) {
     $("#jStatus").className = `status ${j.status}`;
     $("#jStatus").textContent = STATUS[j.status] || j.status;
     $("#cancelBtn").hidden = !busy;
-    $("#fbBtn").disabled = busy;
+    $("#fbBtn").disabled = busy || st.instagramPosts.some(p => ["queued", "creating", "uploading", "processing", "publishing"].includes(p.status));
     $("#fbText").placeholder = busy ? "You can ask for changes once this run finishes."
       : "Ask for changes, e.g. “shorter titles”";
     renderBuilding(busy, j.status);
@@ -760,6 +838,7 @@ async function jobView(id) {
       st.outputs = j.outputs;
       renderOutputs();
     }
+    renderInstagramStatus();
     if (j.summary !== st.summary) {
       st.summary = j.summary;
       $("#notesSec").hidden = !j.summary;
@@ -1014,6 +1093,92 @@ $("#saveSettings").onclick = async () => {
     } else { settings.close(); route(); }
   } catch (err) { $("#settingsErr").textContent = err.message; }
   finally { $("#saveSettings").disabled = false; }
+};
+
+// ---------------------------------------------------------------- Instagram posting
+
+let igTarget = null;
+let igAccountState = {};
+async function refreshInstagramAccount() {
+  igAccountState = await api("/api/instagram/settings");
+  $("#igAccount").textContent = igAccountState.configured
+    ? `Post to ${igAccountState.username ? "@" + igAccountState.username : "account " + igAccountState.user_id}`
+    : "Connect your professional Instagram account to publish.";
+  $("#igPublishSubmit").disabled = !igAccountState.configured;
+}
+
+async function openInstagramSettings() {
+  $("#igSettingsError").textContent = "";
+  $("#igSettingsStatus").textContent = "Loading account…";
+  $("#igToken").value = "";
+  $("#igSettingsSave").disabled = true;
+  $("#igSettingsDialog").showModal();
+  try {
+    const state = await api("/api/instagram/settings");
+    $("#igUserId").value = state.user_id || "";
+    $("#igVersion").value = state.api_version;
+    $("#igSettingsStatus").textContent = state.configured
+      ? `Saved account: ${state.username ? "@" + state.username : state.user_id}. Save to check the token again.` : "No account connected yet.";
+  } catch (err) { $("#igSettingsError").textContent = err.message; }
+  finally { $("#igSettingsSave").disabled = false; }
+}
+$("#instagramSettingsBtn").onclick = openInstagramSettings;
+$("#igConnect").onclick = openInstagramSettings;
+$("#igSettingsClose").onclick = () => $("#igSettingsDialog").close();
+$("#igSettingsDialog").addEventListener("close", () => { $("#igToken").value = ""; });
+$("#igSettingsForm").onsubmit = async e => {
+  e.preventDefault();
+  $("#igSettingsError").textContent = "";
+  $("#igSettingsSave").disabled = true;
+  $("#igSettingsStatus").textContent = "Checking your account…";
+  try {
+    await api("/api/instagram/settings", { method: "POST", body: {
+      user_id: $("#igUserId").value.trim(), access_token: $("#igToken").value.trim(),
+      api_version: $("#igVersion").value.trim() } });
+    $("#igSettingsDialog").close();
+    if ($("#igPublishDialog").open) await refreshInstagramAccount();
+  } catch (err) { $("#igSettingsError").textContent = err.message; $("#igSettingsStatus").textContent = "Account not saved."; }
+  finally { $("#igSettingsSave").disabled = false; }
+};
+
+async function openInstagramPublish(jobId, output) {
+  igTarget = { jobId, output };
+  $("#igVideoName").textContent = describeVideo(output.name).label;
+  $("#igVideoFile").textContent = output.name;
+  $("#igCaption").value = output.caption || "";
+  $("#igPublishError").textContent = "";
+  $("#igAccount").textContent = "Loading account…";
+  $("#igPublishSubmit").disabled = true;
+  updateInstagramCaptionCount();
+  $("#igPublishDialog").showModal();
+  try { await refreshInstagramAccount(); }
+  catch (err) { $("#igPublishError").textContent = err.message; }
+}
+function updateInstagramCaptionCount() {
+  $("#igCaptionCount").textContent = `${Array.from($("#igCaption").value).length.toLocaleString()} / 2,200 characters`;
+}
+$("#igCaption").oninput = updateInstagramCaptionCount;
+$("#igPublishClose").onclick = () => $("#igPublishDialog").close();
+$("#igPublishForm").onsubmit = async e => {
+  e.preventDefault();
+  if (!igTarget) return;
+  const { jobId, output } = igTarget;
+  $("#igPublishError").textContent = "";
+  $("#igPublishSubmit").disabled = true;
+  try {
+    const post = await api(`/api/jobs/${encodeURIComponent(jobId)}/instagram`, { method: "POST", body: {
+      filename: output.name, version: output.version, user_id: igAccountState.user_id,
+      caption: $("#igCaption").value } });
+    if (post.filename !== output.name || post.version !== output.version) {
+      $("#igPublishError").textContent = post.status === "published"
+        ? "An identical video has already been posted to this account. Check your Instagram profile."
+        : "An identical video already has a posting attempt. Check its status before posting again.";
+      return;
+    }
+    $("#igPublishDialog").close();
+    route();
+  } catch (err) { $("#igPublishError").textContent = err.message; }
+  finally { $("#igPublishSubmit").disabled = !igAccountState.configured; }
 };
 
 // ---------------------------------------------------------------- routing

@@ -38,6 +38,14 @@ Then open http://localhost:8000. Paste a Google Drive folder link (or a local fo
 
 API keys live in `.env` (created by the Voice settings panel, readable only by you). Footage (`media/`), renders and job history (`jobs/`) stay on your machine. All of these are git-ignored.
 
+## Post a finished video to Instagram
+
+Open **Instagram settings** in the studio. Connect a Business or Creator Instagram account linked to a Facebook Page, using a Meta app configured for **Facebook Login for Business**. Enter the Instagram account ID and a Page access token with `instagram_basic`, `instagram_content_publish`, and `pages_read_engagement`. Credentials are saved locally in `.env` under `IG_STUDIO_*`, separately from the reels/CRM integration.
+
+Select a completed video, click **Post to Instagram**, review the caption and account, then **Publish Reel**. The studio uploads that MP4 directly to Meta; no public video link or tunnel is needed. The page shows progress and a link to the published Reel. See [Meta's upload guide](https://developers.facebook.com/documentation/instagram-platform/content-publishing/resumable-uploads) for account access requirements.
+
+Posting history stays in each job's git-ignored `instagram-posts.json`. Duplicate clicks reuse the existing attempt. If publishing is interrupted, check Instagram before attempting manual recovery; the app will not automatically repost. Run the isolated tests with `python3 -m unittest tests.test_instagram -v` (no live API calls).
+
 ## Reels pipeline and CRM agent (`dreamhome/`)
 
 The second half of the project turns a media library into scheduled Instagram reels and turns viewers into booked calls. It's a uv project (Python 3.12):

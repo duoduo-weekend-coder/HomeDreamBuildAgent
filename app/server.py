@@ -27,6 +27,11 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
+if __package__:
+    from .instagram import InstagramPublisher, InstagramClient, InstagramConfig, InstagramError, output_version
+else:
+    from instagram import InstagramPublisher, InstagramClient, InstagramConfig, InstagramError, output_version
+
 APP = Path(__file__).resolve().parent
 JOBS = ROOT / "jobs"
 PORT = int(os.getenv("PORT", "8000"))
@@ -65,6 +70,8 @@ VOICES = {"edge", "elevenlabs", "openai", "say", "auto"}
 jobs: dict[str, "Job"] = {}
 work_queue: "queue.Queue[tuple[Job, str]]" = queue.Queue()
 lock = threading.Lock()
+instagram = InstagramPublisher()
+env_lock = threading.RLock()
 
 
 ENV_FILE = ROOT / ".env"
@@ -84,9 +91,27 @@ def read_env_file() -> dict:
 
 
 def write_env_file(updates: dict) -> None:
-    values = {**read_env_file(), **updates}
-    ENV_FILE.write_text("".join(f"{k}={v}\n" for k, v in values.items() if v))
-    ENV_FILE.chmod(0o600)
+    with env_lock:
+        values = {**read_env_file(), **updates}
+        temp = ENV_FILE.with_name(f".env.{uuid.uuid4().hex}.tmp")
+        try:
+            with open(temp, "x", opener=lambda path, flags: os.open(path, flags, 0o600)) as stream:
+                stream.write("".join(f"{k}={v}\n" for k, v in values.items() if v))
+            temp.replace(ENV_FILE)
+        finally:
+            temp.unlink(missing_ok=True)
+
+
+def instagram_config() -> InstagramConfig:
+    env = {**os.environ, **read_env_file()}
+    return InstagramConfig(env.get("IG_STUDIO_USER_ID", ""), env.get("IG_STUDIO_PAGE_ACCESS_TOKEN", ""),
+                           env.get("IG_STUDIO_API_VERSION") or "v23.0")
+
+
+def instagram_settings() -> dict:
+    config = instagram_config()
+    return {"configured": bool(config.user_id and config.token), "user_id": config.user_id,
+            "username": read_env_file().get("IG_STUDIO_USERNAME", ""), "api_version": config.version}
 
 
 def eleven_request(req: urllib.request.Request, permission: str, timeout: int = 20) -> dict:
@@ -224,6 +249,7 @@ class Job:
         for p in sorted(out.glob("*.mp4")):
             version = int(p.stat().st_mtime)
             item = {"name": p.name, "url": f"/files/jobs/{self.id}/output/{p.name}?v={version}",
+                    "version": output_version(p),
                     "poster": f"/api/poster/{self.id}/{p.name}?v={version}", "size": p.stat().st_size}
             for key, suffix in (("metadata_md", ".metadata.md"), ("metadata_json", ".metadata.json")):
                 meta = p.with_name(p.stem + suffix)
@@ -599,7 +625,7 @@ class Handler(BaseHTTPRequestHandler):
             with lock:
                 events = job.events[since:]
             return self.send_json({**job_summary(job), "request": job.request, "events": events, "next": since + len(events),
-                                   "outputs": job.outputs(), "summary": job.summary()})
+                                   "outputs": job.outputs(), "summary": job.summary(), "instagram_posts": instagram.posts(job.dir)})
         if parts[:2] == ["api", "poster"] and len(parts) == 4:
             job = jobs.get(parts[2])
             video = job.dir / "output" / Path(unquote(parts[3])).name if job else None
@@ -627,6 +653,8 @@ class Handler(BaseHTTPRequestHandler):
                                    "elevenlabs_voice_id": env.get("ELEVENLABS_VOICE_ID") or DEFAULT_VOICE["id"],
                                    "elevenlabs_voice_name": env.get("ELEVENLABS_VOICE_NAME")
                                    or ("" if env.get("ELEVENLABS_VOICE_ID") else DEFAULT_VOICE["name"])})
+        if parts == ["api", "instagram", "settings"]:
+            return self.send_json(instagram_settings())
         if parts == ["api", "voices"]:
             key = read_env_file().get("ELEVENLABS_API_KEY")
             if not key:
@@ -651,6 +679,19 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parts = [p for p in urlparse(self.path).path.split("/") if p]
+        if "instagram" in parts:
+            # Publishing and credential writes may only come from our local UI or a JSON client.
+            host = self.headers.get("Host", "")
+            origin = self.headers.get("Origin")
+            if (urlparse("http://" + host).hostname not in ("localhost", "127.0.0.1", "::1")
+                    or (origin and origin != f"http://{host}")
+                    or self.headers.get("Content-Type", "").split(";")[0] != "application/json"):
+                return self.send_json({"error": "Open the studio locally to manage Instagram."}, 403)
+            try:
+                if not 0 < int(self.headers.get("Content-Length", "0")) <= 32768:
+                    raise ValueError
+            except ValueError:
+                return self.send_json({"error": "Invalid Instagram request size."}, 400)
         if parts == ["api", "transcribe"]:
             key = read_env_file().get("ELEVENLABS_API_KEY")
             length = int(self.headers.get("Content-Length") or 0)
@@ -666,8 +707,24 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"text": text})
         try:
             body = self.read_json()
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, ValueError):
             return self.send_json({"error": "Bad JSON"}, 400)
+        if not isinstance(body, dict):
+            return self.send_json({"error": "Expected a JSON object."}, 400)
+        if parts == ["api", "instagram", "settings"]:
+            current = instagram_config()
+            config = InstagramConfig(str(body.get("user_id", current.user_id)).strip(),
+                                     str(body.get("access_token") or current.token).strip(),
+                                     str(body.get("api_version", current.version)).strip())
+            try:
+                account = InstagramClient(config).account()
+                write_env_file({"IG_STUDIO_USER_ID": config.user_id, "IG_STUDIO_PAGE_ACCESS_TOKEN": config.token,
+                                "IG_STUDIO_USERNAME": re.sub(r"[^A-Za-z0-9_.]", "", account["username"]),
+                                "IG_STUDIO_API_VERSION": config.version})
+            except (InstagramError, OSError) as exc:
+                message = str(exc) if isinstance(exc, InstagramError) else "Could not save Instagram settings on this Mac."
+                return self.send_json({"error": message}, 400)
+            return self.send_json(instagram_settings())
         if parts == ["api", "settings"]:
             updates = {}
             key = str(body.get("elevenlabs_api_key", "")).strip()
@@ -701,6 +758,20 @@ class Handler(BaseHTTPRequestHandler):
             job = jobs.get(parts[2])
             if not job:
                 return self.send_json({"error": "No such job"}, 404)
+            if parts[3] == "instagram":
+                with instagram.lock:
+                    if job.status != "done":
+                        return self.send_json({"error": "Wait for this job to finish before posting."}, 409)
+                    config = instagram_config()
+                    if body.get("user_id") != config.user_id:
+                        return self.send_json({"error": "The Instagram account changed. Reopen the posting dialog to review it."}, 409)
+                    try:
+                        post, started = instagram.start(job.dir, str(body.get("filename", "")),
+                            str(body.get("version", "")), body.get("caption", ""), config)
+                    except (InstagramError, OSError) as exc:
+                        message = str(exc) if isinstance(exc, InstagramError) else "Could not read the video or save the posting record."
+                        return self.send_json({"error": message}, 400)
+                    return self.send_json(post, 202 if started else 200)
             if parts[3] == "cancel":
                 job.status = "cancelled"
                 if job.proc:
@@ -708,18 +779,21 @@ class Handler(BaseHTTPRequestHandler):
                 job.save()
                 return self.send_json(job_summary(job))
             if parts[3] == "feedback":
-                text = str(body.get("text", "")).strip()[:2000]
-                if not text:
-                    return self.send_json({"error": "Write some feedback first."}, 400)
-                if job.status in ("queued", "running"):
-                    return self.send_json({"error": "Wait for the current run to finish."}, 409)
-                if not job.session_id:
-                    return self.send_json({"error": "This job has no agent session to continue."}, 409)
-                job.status = "queued"
-                job.save()
-                job.add("feedback", text)
-                work_queue.put((job, feedback_prompt(job, text)))
-                return self.send_json(job_summary(job))
+                with instagram.lock:
+                    if instagram.active(job.dir):
+                        return self.send_json({"error": "Wait for Instagram posting to finish before changing these videos."}, 409)
+                    text = str(body.get("text", "")).strip()[:2000]
+                    if not text:
+                        return self.send_json({"error": "Write some feedback first."}, 400)
+                    if job.status in ("queued", "running"):
+                        return self.send_json({"error": "Wait for the current run to finish."}, 409)
+                    if not job.session_id:
+                        return self.send_json({"error": "This job has no agent session to continue."}, 409)
+                    job.status = "queued"
+                    job.save()
+                    job.add("feedback", text)
+                    work_queue.put((job, feedback_prompt(job, text)))
+                    return self.send_json(job_summary(job))
         self.send_json({"error": "Not found"}, 404)
 
     def send_file(self, path: Path, cache: bool = False) -> None:
