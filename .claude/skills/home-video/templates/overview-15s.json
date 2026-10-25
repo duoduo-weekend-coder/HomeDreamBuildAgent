@@ -1,0 +1,26 @@
+{
+  "kind": "overview",
+  "duration": 15,
+  "aspect": "16:9",
+  "info": {"home_name": "", "location": "", "specs": "", "builder": ""},
+  "voice": {"provider": "auto"},
+  "music": null,
+  "shots": [
+    {"source": "media/overview/exterior-aerial.jpg", "duration": 3.5, "motion": "zoom_out", "layout": "center",
+     "title": ["{home_name}", "Welcome Home"], "subtitle": ["{location}"],
+     "narration": ["Welcome to {home_name}.", "Welcome home."]},
+    {"source": "media/overview/exterior-front.jpg", "duration": 2.75, "motion": "pan_right",
+     "kicker": "Exterior", "title": "Timeless curb appeal", "subtitle": ["{specs}"]},
+    {"source": "media/overview/living.jpg", "duration": 2.75, "motion": "zoom_in",
+     "kicker": "Living", "title": "Open & light-filled",
+     "narration": "Open, light-filled living, and a kitchen made for gathering."},
+    {"source": "media/overview/kitchen.jpg", "duration": 2.75, "motion": "pan_left",
+     "kicker": "Kitchen", "title": "Made for gathering"},
+    {"source": "media/overview/primary-bedroom.jpg", "duration": 2.75, "motion": "zoom_in",
+     "kicker": "Primary suite", "title": "Your private retreat",
+     "narration": "A private retreat to unwind."},
+    {"source": "card", "duration": 3.0,
+     "title": ["{home_name}", "Welcome Home"], "subtitle": ["Schedule your private tour"],
+     "narration": "Schedule your tour today."}
+  ]
+}
