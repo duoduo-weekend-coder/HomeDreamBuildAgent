@@ -11,9 +11,11 @@ video is exactly the storyboard's `duration` long.
 """
 
 import argparse
+import base64
 import hashlib
 import json
 import os
+import re
 import shutil
 import string
 import subprocess
@@ -30,8 +32,12 @@ FPS = 30
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".tif", ".tiff", ".bmp"}
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm"}
 
+# Montserrat ExtraBold (static wght=800 instance of the SIL OFL variable font; licence in assets/OFL.txt).
+FONT_PATH = Path(__file__).resolve().parent.parent / "assets" / "Montserrat-ExtraBold.ttf"
+FALLBACK_FONT = "/System/Library/Fonts/Helvetica.ttc"
+
 DEFAULT_STYLE = {
-    "font": "/System/Library/Fonts/Avenir Next.ttc",
+    "font": str(FONT_PATH),
     "text_color": "white",
     "accent_color": "#E8C98A",
     "card_color": "#1F2A24",
@@ -120,7 +126,8 @@ def tts_provider(requested: str) -> str:
     return "say"
 
 
-def synthesize(text: str, provider: str, voice: str | None, out: Path) -> None:
+def synthesize(text: str, provider: str, voice: str | None, out: Path) -> list[list] | None:
+    """Write speech to `out` (wav). Returns [word, start, end] timings when the provider gives them (ElevenLabs)."""
     if provider == "elevenlabs" and not os.getenv("ELEVENLABS_API_KEY"):
         raise ValueError("ElevenLabs voice requested but ELEVENLABS_API_KEY is not set (add it in the web interface settings or .env)")
     voice = voice or (os.getenv("ELEVENLABS_VOICE_ID") if provider == "elevenlabs" else None) or DEFAULT_VOICES[provider]
@@ -146,18 +153,22 @@ def synthesize(text: str, provider: str, voice: str | None, out: Path) -> None:
     elif provider == "elevenlabs":
         body = {"text": text, "model_id": "eleven_multilingual_v2", "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}}
         req = urllib.request.Request(
-            f"https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=mp3_44100_128",
+            f"https://api.elevenlabs.io/v1/text-to-speech/{voice}/with-timestamps?output_format=mp3_44100_128",
             data=json.dumps(body).encode(),
             headers={"xi-api-key": os.environ["ELEVENLABS_API_KEY"], "Content-Type": "application/json"},
         )
         mp3 = out.with_suffix(".mp3")
         try:
             with urllib.request.urlopen(req, timeout=120) as resp:
-                mp3.write_bytes(resp.read())
+                data = json.loads(resp.read())
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"ElevenLabs error {e.code}: {e.read().decode('utf-8', 'replace')[:300]}") from None
+        mp3.write_bytes(base64.b64decode(data["audio_base64"]))
         run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(mp3), str(out)])
         mp3.unlink()
+        a = data.get("alignment") or {}
+        if a.get("characters"):
+            return words_from_alignment(a["characters"], a["character_start_times_seconds"], a["character_end_times_seconds"])
     else:
         raise ValueError(f"Unknown voice provider {provider!r} (use auto, elevenlabs, openai, edge or say)")
 
@@ -168,14 +179,79 @@ def trimmed_narration(text: str, provider: str, voice: str | None, cache_dir: Pa
     final = cache_dir / f"voice-{key}.wav"
     if not final.exists():
         raw = cache_dir / f"voice-{key}-raw.wav"
-        synthesize(text, provider, voice, raw)
+        words = synthesize(text, provider, voice, raw)
         # Paid voices bill per character; log each generated (not cached) line for the job page.
         with open(cache_dir / "usage.jsonl", "a") as f:
             f.write(json.dumps({"provider": provider, "characters": len(text), "t": round(time.time())}) + "\n")
+        if words:
+            # Word times are relative to the raw audio; shift them by the leading silence we cut.
+            lead = leading_silence(raw)
+            words = [[w, round(max(0.0, s - lead), 3), round(max(0.0, e - lead), 3)] for w, s, e in words]
+            final.with_suffix(".words.json").write_text(json.dumps(words))
         trim = "silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse"
         run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(raw), "-af", trim, "-ar", "48000", "-ac", "2", str(final)])
         raw.unlink()
     return final
+
+
+def leading_silence(path: Path) -> float:
+    """Seconds of silence (below -45 dB) at the start of `path`, matching the trim in trimmed_narration."""
+    result = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-i", str(path), "-af", "silencedetect=n=-45dB:d=0.01", "-f", "null", "-"],
+        capture_output=True, text=True,
+    )
+    m = re.search(r"silence_start: (-?[\d.]+)\D+?silence_end: ([\d.]+)", result.stderr)
+    return float(m.group(2)) if m and float(m.group(1)) <= 0.01 else 0.0
+
+
+def words_from_alignment(chars: list[str], starts: list[float], ends: list[float]) -> list[list]:
+    """ElevenLabs character alignment -> [word, start, end] (same parsing as dreamhome/integrations/elevenlabs.py)."""
+    words, buf, w_start, w_end = [], "", None, 0.0
+    for ch, s, e in zip(chars, starts, ends):
+        if ch.isspace():
+            if buf:
+                words.append([buf, w_start, w_end])
+            buf, w_start = "", None
+            continue
+        if w_start is None:
+            w_start = s
+        buf += ch
+        w_end = e
+    if buf:
+        words.append([buf, w_start, w_end])
+    return words
+
+
+def narration_words(text: str, audio: Path) -> list[list]:
+    """[word, start, end] in seconds of the trimmed clip: real timings when cached (ElevenLabs), else an
+    estimate that spreads the words over the clip in proportion to their length."""
+    cached = audio.with_suffix(".words.json")
+    if cached.exists():
+        return json.loads(cached.read_text())
+    tokens = text.split()
+    weights = [len(t) + 2 for t in tokens]
+    duration, total, t, out = media_duration(audio), sum(weights) or 1, 0.0, []
+    for tok, w in zip(tokens, weights):
+        d = duration * w / total
+        out.append([tok, t, t + d])
+        t += d
+    return out
+
+
+def chunk_words(words: list[list], max_words: int = 3, max_chars: int = 18) -> list[list]:
+    """Group timed words into short caption lines [text, start, end]; never run across punctuation."""
+    out, cur = [], []
+    for w in words:
+        if cur and len(" ".join(x[0] for x in cur + [w])) > max_chars:
+            out.append([" ".join(x[0] for x in cur), cur[0][1], cur[-1][2]])
+            cur = []
+        cur.append(w)
+        if len(cur) >= max_words or w[0][-1] in ".,!?;:":
+            out.append([" ".join(x[0] for x in cur), cur[0][1], cur[-1][2]])
+            cur = []
+    if cur:
+        out.append([" ".join(x[0] for x in cur), cur[0][1], cur[-1][2]])
+    return out
 
 
 # ---------------------------------------------------------------- shots
@@ -209,8 +285,33 @@ def fade_alpha(t_in: float, t_out: float, f: float = 0.35) -> str:
     return f"if(lt(t,{t_in}),0,if(lt(t,{t_in + f}),(t-{t_in})/{f},if(lt(t,{t_out - f}),1,if(lt(t,{t_out}),({t_out}-t)/{f},0))))"
 
 
-def text_filters(shot: dict, dur: float, W: int, H: int, work: Path, idx: int, style: dict, is_card: bool) -> list[str]:
-    """drawtext filters for the shot's kicker (small label), title and subtitle."""
+def drawtext(font: str, textfile: Path, size: int, color: str, x: str, y: str, extra: str = "") -> str:
+    return f"drawtext=fontfile='{font}':textfile='{textfile}':fontsize={size}:fontcolor={color}:x={x}:y='{y}'{extra}"
+
+
+def shadowed_text(src: str, texts: list[dict], W: int, H: int, dur: float, out: str) -> list[str]:
+    """Filter-graph lines that draw `texts` over stream `src` as white text with a soft blurred drop shadow
+    (like dreamhome/reels/captions.py: shadow alpha 0.9, blur ~size/8, nudged down ~size/22), no box or scrim.
+    Each text is a dict of drawtext() arguments plus "extra" options (alpha/enable/line spacing...)."""
+    size = max(t["size"] for t in texts)
+    canvas = f"color=c=black:s={W}x{H}:r={FPS}:d={dur:.3f}"
+    mask = ",".join(
+        drawtext(t["font"], t["textfile"], t["size"], "white", t["x"], f"{t['y']}+{max(2, t['size'] // 22)}",
+                 t["extra"] + f":borderw={max(2, t['size'] // 10)}:bordercolor=white") for t in texts
+    )  # the border widens the shadow into a soft dark halo, so white text reads even on white walls
+    label = out.strip("[]")
+    return [
+        f"{canvas},format=gray,{mask},gblur=sigma={max(3, size / 7):.1f},lut=c0=min(255\,val*1.3)[{label}_m]",
+        f"{canvas},format=yuva420p[{label}_k]",
+        f"[{label}_k][{label}_m]alphamerge[{label}_s]",
+        f"{src}[{label}_s]overlay=0:0,"
+        + ",".join(drawtext(t["font"], t["textfile"], t["size"], t["color"], t["x"], t["y"], t["extra"]) for t in texts)
+        + out,
+    ]
+
+
+def text_filters(shot: dict, dur: float, W: int, H: int, work: Path, idx: int, style: dict, is_card: bool) -> list[dict]:
+    """Text specs (for shadowed_text) for the shot's kicker (small label), title and subtitle."""
     base = min(W, H)
     lines = []  # (key, size, color)
     if shot.get("kicker"):
@@ -222,22 +323,29 @@ def text_filters(shot: dict, dur: float, W: int, H: int, work: Path, idx: int, s
     if not lines:
         return []
 
-    # Wrap long text (e.g. a user's highlight message) to fit the frame; ~0.55em per character.
+    # Wrap long text (e.g. a user's highlight message) to fit the frame; ~0.62em per character in Montserrat ExtraBold.
     spacing = 8
     texts = {}
     for key, size, _ in lines:
         text = str(shot[key]).upper() if key == "kicker" else str(shot[key])
-        width = max(8, int(W * 0.86 / (size * 0.55)))
+        width = max(8, int(W * 0.86 / (size * 0.62)))
         texts[key] = "\n".join(textwrap.fill(part, width) for part in text.split("\n"))
-    heights = {key: size * (texts[key].count("\n") + 1) + spacing * texts[key].count("\n") for key, size, _ in lines}
+    # drawtext advances each line by the font's line height (~1.22em for Montserrat) plus line_spacing.
+    heights = {key: round(size * 1.22) * (texts[key].count("\n") + 1) + spacing * texts[key].count("\n") for key, size, _ in lines}
 
     gap = round(base * 0.018)
     block_h = sum(heights.values()) + gap * (len(lines) - 1)
     vertical = H > W
+    captions = style.get("_captions", False)  # burned-in voiceover captions sit in the lower part of the frame
     if is_card or shot.get("layout") == "center":
         top, centered = (H - block_h) / 2, True
+        if captions and top + block_h > H * 0.60:
+            top = max(H * 0.06, H * 0.60 - block_h)
     elif vertical:
-        top, centered = H * 0.70 - block_h, True  # clear of Instagram / TikTok captions
+        # clear of Instagram / TikTok UI; above the captions' band when they are on
+        top, centered = (H * 0.10, True) if captions else (H * 0.70 - block_h, True)
+    elif captions:
+        top, centered = H * 0.08, False
     else:
         top, centered = H - H * 0.10 - block_h, False
 
@@ -250,13 +358,12 @@ def text_filters(shot: dict, dur: float, W: int, H: int, work: Path, idx: int, s
         start = t_in + 0.12 * n
         x = "(w-text_w)/2" if centered else f"{round(W * 0.06)}"
         y_expr = f"{round(y)}+{round(base * 0.02)}*(1-clip((t-{start})/0.45,0,1))"
-        filters.append(
-            f"drawtext=fontfile='{style['font']}':textfile='{tf}':fontsize={size}:fontcolor={color}"
-            f":x={x}:y='{y_expr}':alpha='{fade_alpha(start, t_out)}'"
-            f":shadowcolor=black@0.55:shadowx=0:shadowy={max(2, size // 18)}"
+        filters.append({
+            "font": style["font"], "textfile": tf, "size": size, "color": color, "x": x, "y": y_expr,
+            "extra": f":alpha='{fade_alpha(start, t_out)}'"
             + (f":line_spacing={spacing}" if key != "kicker" else "")
-            + (":text_align=C" if centered else "")
-        )
+            + (":text_align=C" if centered else ""),
+        })
         y += heights[key] + gap
     return filters
 
@@ -270,16 +377,27 @@ def render_shot(shot: dict, idx: int, dur: float, W: int, H: int, work: Path, st
         inputs = ["-f", "lavfi", "-i", f"color=c={color}:s={W}x{H}:r={FPS}:d={dur:.3f}"]
         vf = []
     elif source.suffix.lower() in IMAGE_EXTS:
-        if source.suffix.lower() in {".heic", ".heif"}:
-            jpg = work / f"src-{idx:02d}.jpg"
-            run(["sips", "-s", "format", "jpeg", str(source), "--out", str(jpg)])
-            source = jpg
+        # Privacy crop/blur, straightening and framing -> a ready 2W x 2H frame (see prep_photo.py).
+        try:
+            sys.path.insert(0, str(Path(__file__).parent))
+            from prep_photo import prepare
+
+            source = prepare(source, W, H, shot, Path(style.get("_cache_dir", work)))
+            vf = []
+        except Exception as e:
+            if shot.get("crop") or shot.get("blur"):
+                raise  # never render a photo without its privacy edits
+            print(f"warning: photo prep failed for {source.name} ({e}); using plain scale/crop", file=sys.stderr)
+            if source.suffix.lower() in {".heic", ".heif"}:
+                jpg = work / f"src-{idx:02d}.jpg"
+                run(["sips", "-s", "format", "jpeg", str(source), "--out", str(jpg)])
+                source = jpg
+            vf = [
+                f"scale={2 * W}:{2 * H}:force_original_aspect_ratio=increase:flags=lanczos",
+                f"crop={2 * W}:{2 * H}",
+            ]
         inputs = ["-i", str(source)]
-        vf = [
-            f"scale={2 * W}:{2 * H}:force_original_aspect_ratio=increase:flags=lanczos",
-            f"crop={2 * W}:{2 * H}",
-            zoompan_filter(shot.get("motion", "zoom_in"), frames, W, H, shot.get("motion_amount", 0.10)),
-        ]
+        vf.append(zoompan_filter(shot.get("motion", "zoom_in"), frames, W, H, shot.get("motion_amount", 0.10)))
     else:
         start = float(shot.get("start", 0))
         speed = float(shot.get("speed", 1.0))
@@ -293,33 +411,17 @@ def render_shot(shot: dict, idx: int, dur: float, W: int, H: int, work: Path, st
         ]
     vf += ["setsar=1"]
     texts = text_filters(shot, dur, W, H, work, idx, style, is_card)
-    if texts and not is_card:
-        # Darken behind the titles so they stay readable on bright photos.
-        centered = shot.get("layout") == "center"
-        graph = f"[0:v]{','.join(vf)}[base];[1:v]format=rgba[scrim];[base][scrim]overlay=0:0,{','.join(texts)},format=yuv420p[out]"
-        inputs += ["-loop", "1", "-i", str(scrim_image(W, H, work, centered))]
+    if texts:
+        # White text with a soft blurred shadow keeps titles readable on bright photos without a dark scrim.
+        graph = ";".join([f"[0:v]{','.join(vf)}[base]", *shadowed_text("[base]", texts, W, H, dur, "[txt]"), "[txt]format=yuv420p[out]"])
     else:
-        graph = f"[0:v]{','.join(vf + texts)},format=yuv420p[out]"
+        graph = f"[0:v]{','.join(vf)},format=yuv420p[out]"
     run([
         "ffmpeg", "-y", "-hide_banner", "-loglevel", "error", *inputs,
         "-filter_complex", graph, "-map", "[out]", "-frames:v", str(frames), "-an", "-r", str(FPS),
         "-c:v", "libx264", "-preset", "medium", "-crf", "16", str(out),
     ])
     return out
-
-
-def scrim_image(W: int, H: int, work: Path, centered: bool) -> Path:
-    path = work / f"scrim-{'center' if centered else 'lower'}.png"
-    if not path.exists():
-        if centered:
-            alpha = "120*clip(1-hypot((X-W/2)/(W*0.55),(Y-H/2)/(H*0.45)),0,1)"
-        else:
-            alpha = "150*pow(clip((Y-H*0.45)/(H*0.55),0,1),1.6)"
-        run([
-            "ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", f"color=black:s={W}x{H}",
-            "-vf", f"format=rgba,geq=r=0:g=0:b=0:a='{alpha}'", "-frames:v", "1", str(path),
-        ])
-    return path
 
 
 # ---------------------------------------------------------------- assembly
@@ -367,12 +469,48 @@ def plan_narration(shots, starts, total, provider, voice, cache_dir) -> list[tup
     return plan
 
 
+def plan_captions(shots: list[dict], narration: list[tuple[Path, float, float]], total: float) -> list[list]:
+    """Short caption lines [text, start, end] in video time, synced word by word to the narration.
+    A narration clip placed at `begin` and sped up by `tempo` says a word at clip time t at begin + t / tempo."""
+    texts = [s["narration"] for s in shots if s.get("narration")]
+    captions = []
+    for text, (audio, begin, tempo) in zip(texts, narration):
+        words = [[w, begin + s / tempo, begin + e / tempo] for w, s, e in narration_words(text, audio)]
+        line = chunk_words(words)
+        # Hold each caption until the next one starts so the screen doesn't flicker empty mid-sentence.
+        for a, b in zip(line, line[1:]):
+            if b[1] - a[2] < 0.35:
+                a[2] = b[1]
+        if line:
+            line[-1][2] += 0.3
+        captions += line
+    for a, b in zip(captions, captions[1:]):
+        a[2] = min(a[2], b[1])
+    return [[t, round(s, 3), round(min(e, total), 3)] for t, s, e in captions if s < total]
+
+
+def caption_texts(captions: list[list], W: int, H: int, work: Path, style: dict) -> list[dict]:
+    """Text specs (for shadowed_text) that show each caption only while it is being spoken."""
+    size = round(min(W, H) * 0.062)
+    center_y = H * (0.66 if H > W else 0.82)
+    specs = []
+    for n, (text, start, end) in enumerate(captions):
+        tf = work / f"caption-{n:03d}.txt"
+        tf.write_text(text.upper(), encoding="utf-8")
+        specs.append({
+            "font": style["font"], "textfile": tf, "size": size, "color": style["text_color"],
+            "x": "(w-text_w)/2", "y": f"{round(center_y - size / 2)}",
+            "extra": f":enable='between(t,{start:.3f},{end:.3f})'",
+        })
+    return specs
+
+
 def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_ai: bool, placeholders: bool) -> Path:
     load_dotenv()
     sb = json.loads(storyboard_path.read_text())
     style = {**DEFAULT_STYLE, **sb.get("style", {})}
     if not Path(style["font"]).exists():
-        style["font"] = "/System/Library/Fonts/Helvetica.ttc"
+        style["font"] = FALLBACK_FONT
     aspect = aspect or sb.get("aspect", "16:9")
     W, H = SIZES[aspect]
     total = float(sb["duration"])
@@ -384,6 +522,7 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
     output.parent.mkdir(parents=True, exist_ok=True)
     cache_dir = output.parent / ".cache"
     cache_dir.mkdir(exist_ok=True)
+    style["_cache_dir"] = cache_dir
 
     # Resolve every source up front so a missing file fails before any rendering.
     sources, missing = [], []
@@ -422,6 +561,8 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
     shown_voice = voice or (os.getenv("ELEVENLABS_VOICE_ID") if provider == "elevenlabs" else None) or DEFAULT_VOICES[provider]
     print(f"rendering {len(shots)} shots at {W}x{H}, {total:g}s, voice: {provider} ({shown_voice})")
     narration = plan_narration(shots, starts, total, provider, voice, cache_dir)
+    captions = plan_captions(shots, narration, total) if sb.get("captions", True) else []
+    style["_captions"] = bool(captions)  # titles move out of the captions' way
 
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
@@ -435,6 +576,10 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
             transition = shots[k].get("transition", style["transition"])
             graph.append(f"{last}[{k}:v]xfade=transition={transition}:duration={T}:offset={length - T:.3f}[v{k}]")
             last, length = f"[v{k}]", length + durs[k] - T
+        if captions:
+            # Burned-in captions synced to the voiceover (most viewers watch muted).
+            graph += shadowed_text(last, caption_texts(captions, W, H, work, style), W, H, total, "[capt]")
+            last = "[capt]"
         graph.append(f"{last}format=yuv420p[vout]")
 
         n_in = len(segments)

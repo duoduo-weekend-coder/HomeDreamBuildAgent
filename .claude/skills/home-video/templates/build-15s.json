@@ -16,7 +16,7 @@
   "shots": [
     {
       "source": "media/build/finished-exterior.jpg",
-      "duration": 2.0,
+      "duration": 3.0,
       "motion": "zoom_in",
       "layout": "center",
       "title": [

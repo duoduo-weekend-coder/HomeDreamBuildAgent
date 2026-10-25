@@ -16,7 +16,7 @@
   "shots": [
     {
       "source": "media/tour/exterior.jpg",
-      "duration": 2.5,
+      "duration": 3.2,
       "motion": "zoom_in",
       "layout": "center",
       "title": [

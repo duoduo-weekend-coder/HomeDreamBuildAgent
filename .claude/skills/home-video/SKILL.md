@@ -23,14 +23,24 @@ Every template ends on a card with `Comment BUILD`. **Highlight message:** when 
 1. **Read the media before downloading it.**
    - **Google Drive folder** (even one shared with the user): `python3 .claude/skills/home-video/scripts/fetch_drive.py <folder URL> --index --dest media/drive-<folder id>` uses the Drive API to read every file's metadata (capture time, resolution, clip length, GPS, camera) and one thumbnail per shot, and Google Docs as notes. It writes `.index/` (below) in about 30 seconds, without downloading any video. The first run opens a browser for a one-time, read-only Google sign-in that the user approves. rclone's shared Google client ID is being retired during 2026; if sign-in starts failing, follow https://rclone.org/drive/#making-your-own-client-id and run `rclone config reconnect homevideo-gdrive:`.
    - **Local files**: `python3 .claude/skills/home-video/scripts/scan_media.py <folder>`. This shows 4 frames per clip instead of 1.
+   - **Then group similar shots**: `python3 .claude/skills/home-video/scripts/similar_shots.py <folder>` (local files only, about a minute for 300 files, faster on re-runs). It rates each photo and each clip's middle frame for sharpness and exposure, and groups near-identical framings of the same scene. A different angle of the same room counts as a new scene.
 2. **What the index contains** (`<folder>/.index/`):
    - `index.md`: one row per shot with time, length, resolution, drone altitude and gimbal angle (local scans), plus an approximate GPS location and any notes. Rows marked "(in Drive only)" aren't downloaded yet.
    - `sheet-<day>.jpg`: a contact sheet per shoot day, with numbered tiles.
    - Duplicates (the same shot saved twice, e.g. DJI Fly app re-exports) are listed once, keeping the camera original.
+   - `scenes.md` (from `similar_shots.py`): one row per scene with its representative (the sharpest, best-exposed shot), the other shots of that scene, relative sharpness, exposure notes and an automatic quality hint. It can't see people, signs or house numbers; you check for those.
    - After picking shots, download only those: `fetch_drive.py <URL> --dest <folder> --only <file names> --shrink`. `--shrink` re-encodes clips to HEVC at full resolution (about 80% smaller) and deletes the originals; files already on disk are skipped. To choose `start` points, grab frames from the downloaded clip with ffmpeg; don't re-run `scan_media.py` over a Drive-indexed folder, which would replace the Drive index.
-3. **Look at every contact sheet** (Read tool; zoom with ffmpeg crops if a sheet is large) and write `shots.md` in the media folder: one line per usable shot, giving its number, what it shows (e.g. "orbit of framed house, 40 m, golden light", "top-down of slab") and quality issues (shaky, overexposed, D-Log flat colour). For build videos, the shoot dates *are* the construction order; say which stage each day shows.
+3. **Tag every shot once, in `shots.md`.** If a media folder already has a `catalog.md`, reuse it instead of re-tagging. Otherwise look at every contact sheet (Read tool; zoom with ffmpeg crops if a sheet is large) alongside `scenes.md`, and write `shots.md` in the media folder with one line per scene, giving:
+   - its number and representative file, plus the other shots of the scene;
+   - what it shows: the room or exterior view, or the construction stage (e.g. "orbit of framed house, 40 m, golden light", "top-down of slab");
+   - a quality grade: **hero** (best, for the hook and the last slot), **good**, **ok** (filler), **weak** (don't use) or **exclude** (never post);
+   - problems: people or faces, blur, signs, house numbers, clutter, reflections (the photographer in a mirror or window), plus shaky, overexposed or D-Log flat colour;
+   - for clips, which time ranges are usable. The sheets show 4 frames per clip (10/37/63/90%), so pull extra frames with ffmpeg only where it matters.
+
+   For build videos, the shoot dates *are* the construction order; say which stage each day shows.
 4. **Copy the matching template** to `storyboards/<kind>-<length>.json` and fill it in:
    - Point each `source` at the best shot for that slot. For clips, set `start` to the strongest moment (from the contact-sheet timestamps). Drop slots with no good media and give their time to neighbours; keep the end card.
+   - Use one shot per scene (its representative), and never a weak or exclude shot. Put hero shots in the hook and the last slot. Fix a privacy problem with `"crop": [l, t, r, b]` or `"blur": [[l, t, r, b], ...]` (fractions of the original photo) if that still leaves a good shot; otherwise drop the shot.
    - Rewrite titles to match what's actually in each shot.
    - Fill `info` (`home_name`, `location`, `specs`, `builder`, `highlight`) from what the user said, the notes or the folder names. **All of these are optional.** Leave a field empty if it isn't known, and never invent one. Text fields can be a list of fallbacks: `["Welcome to {home_name}.", "Welcome home."]` uses the first option whose `{fields}` are all known, and a field whose options are all unknown is simply left out.
    - The templates assume a mix of exterior and interior shots. If the media is all aerial or all exterior (typical for drone footage), make the overview an exterior and neighbourhood tour, and tell the user that a room tour needs interior footage.
@@ -49,7 +59,7 @@ Use `--placeholders` to preview a storyboard before all the media exists. Missin
 
 ## Storyboard fields
 
-Top level: `duration` (seconds), `aspect` (`16:9` `9:16` `1:1` `4:5`), `info` (optional home details, used by `{placeholders}`), `voice`, `music` (path or null), optional `style`.
+Top level: `duration` (seconds), `aspect` (`16:9` `9:16` `1:1` `4:5`), `info` (optional home details, used by `{placeholders}`), `voice`, `music` (path or null), optional `style`. `captions` (default `true`): burn in the narration word by word (max 3 words per caption, synced to ElevenLabs word timings, estimated for other voices). Text is white Montserrat ExtraBold with a soft shadow; with captions on, titles move to the top of the frame.
 
 Per shot:
 
@@ -66,6 +76,10 @@ Per shot:
 | `transition` | ffmpeg xfade name for the cut into this shot (`fade`, `smoothleft`, `circleopen`…) |
 | `ai_prompt` | With `--ai`: turn this photo into a short AI video clip (see below) |
 | `color` | Background colour for a `card` |
+| `straighten` | Photos only, default `true`: level the horizon and make verticals plumb (tilt + keystone fitted from vertical edges, one perspective warp, then crop) |
+| `fit` | Photos only: `auto` (default), `cover` (fill and crop) or `contain` (whole photo on a blurred copy of itself; `auto` picks it for e.g. landscape photos in 9:16) |
+| `crop` | Photos only: `[l, t, r, b]` box to keep, in fractions of the original photo, e.g. to cut out a road sign |
+| `blur` | Photos only: list of `[l, t, r, b]` boxes to blur, e.g. house numbers. Applied first, so the privacy edit is never skipped |
 
 `style` overrides: `font`, `text_color`, `accent_color`, `card_color`, `transition`, `transition_duration`, `music_volume`.
 

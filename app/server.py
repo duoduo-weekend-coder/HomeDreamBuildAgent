@@ -229,7 +229,8 @@ don't re-run scan_media.py over {media}, which would replace the Drive index."""
     else:
         media = source
         source_steps = f"""Footage is already on this Mac in: {source}
-Scan it with scan_media.py (reuse {media}/.index if it exists and the file count matches)."""
+Scan it with scan_media.py (reuse {media}/.index if it exists and the file count matches), then run
+similar_shots.py on it (reuse {media}/.index/scenes.json if it exists)."""
 
     videos = []
     for kind in r["kinds"]:
@@ -248,6 +249,13 @@ so nobody can answer questions: make sensible choices yourself and explain them 
 
 {source_steps}
 Media folder: {media}. If {media}/shots.md exists, reuse it; otherwise write it after reviewing the contact sheets.
+Reuse any catalog.md in the media folder or its subfolders (hand-checked quality grades, never-post list,
+privacy crop/blur values) instead of re-tagging those shots. For shots it doesn't cover, give each shot in shots.md a
+room or construction stage, a quality grade (hero/good/ok/weak/exclude) and any problems (faces, blur, signs,
+house numbers, clutter, reflections).
+Storyboards: one representative shot per scene, never weak or exclude shots, hero shots for the hook and the final
+slot; fix privacy problems with the shot's `crop`/`blur` fields or leave the shot out. Photos are straightened and
+framed automatically, and captions are burned in word by word from the voiceover.
 
 Make these videos (exact output paths):
 {chr(10).join(videos)}

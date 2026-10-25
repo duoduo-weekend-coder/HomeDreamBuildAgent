@@ -16,7 +16,7 @@
   "shots": [
     {
       "source": "media/showcase/hero.jpg",
-      "duration": 3.0,
+      "duration": 3.2,
       "motion": "zoom_in",
       "layout": "center",
       "title": [
