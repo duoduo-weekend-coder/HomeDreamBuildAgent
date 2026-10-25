@@ -13,7 +13,7 @@
     ],
     "voice": "None: the music carries it (the reference has no narration). Only add one short line if the user asks.",
     "pace": "Cut every 2 beats on the music (about 1.5 s at 80 bpm); slow push-ins on every photo; last two shots held 2-3 s.",
-    "music": "Warm, cinematic or acoustic-pop track around 75-95 bpm with a clear beat.",
+    "music": "Warm, cinematic or acoustic track around 70-95 bpm that builds (quiet under the construction, lifting into the finished home)",
     "reference": "data/others_video_reference/both_process_and_final.mp4",
     "files": {
       "15": "build-15s.json",
@@ -34,7 +34,7 @@
     ],
     "voice": "None: music only, like the reference.",
     "pace": "Very fast and rhythmic: flash teaser at 1/2 beat per shot, then 1.5-2 beats per shot; nearly static camera (tiny push-ins), hard cuts.",
-    "music": "Upbeat pop / house / funk track around 95-125 bpm.",
+    "music": "Upbeat pop / house / funk track around 95-140 bpm (around 130 bpm puts 2-beat cuts near the reference's 0.85 s)",
     "reference": "data/others_video_reference/vibe.mp4",
     "files": {
       "15": "showcase-15s.json",

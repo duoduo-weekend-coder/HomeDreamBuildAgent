@@ -20,3 +20,10 @@ data/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Music files are licensed for use in videos, not for redistribution: keep them local.
+# library.json / library.md (tempo, picks, licenses) are committed.
+assets/music/*
+!assets/music/library.json
+!assets/music/library.md
+!assets/music/README.md

@@ -59,7 +59,7 @@ Use `--placeholders` to preview a storyboard before all the media exists. Missin
 
 ## Storyboard fields
 
-Top level: `duration` (seconds), `aspect` (`16:9` `9:16` `1:1` `4:5`), `info` (optional home details, used by `{placeholders}`), `voice`, `music` (path or null), optional `style`. `beat_sync` (with `music`: detect the tempo and cut on the beat; `bpm`/`beat_offset` override detection), `captions` (default `true`): burn in the narration word by word (max 3 words per caption, synced to ElevenLabs word timings, estimated for other voices). Text is white Montserrat ExtraBold with a soft shadow; with captions on, titles move to the top of the frame.
+Top level: `duration` (seconds), `aspect` (`16:9` `9:16` `1:1` `4:5`), `info` (optional home details, used by `{placeholders}`), `voice`, `music` (path or null), optional `style`. `music_start` (seconds into the track; default: the best excerpt from `library.json`, see Music), `beat_sync` (with `music`: detect the tempo and cut on the beat; `bpm`/`beat_offset` override detection), `captions` (default `true`): burn in the narration word by word (max 3 words per caption, synced to ElevenLabs word timings, estimated for other voices). Text is white Montserrat ExtraBold with a soft shadow; with captions on, titles move to the top of the frame.
 
 Per shot:
 
@@ -96,6 +96,14 @@ Per shot:
 Tell the user which voice was used. If it was `say`, say that it's a draft voice.
 
 Narration audio is cached in `output/.cache`, so re-rendering after a title change doesn't pay for speech again. Music is turned down automatically while the narrator speaks.
+
+## Music
+
+Tracks live in `assets/music/` (not committed). `assets/music/library.md` lists each one's tempo, tone, energy, the
+templates it suits and its license; pick from it, and never use a track whose license is unknown in a video that will
+be published without telling the user. The renderer starts the music at the best excerpt recorded for the
+template and length (a lift where the process turns into the finished home; a loud, steady section for the vibe reel)
+and, with `beat_sync`, on a beat. New tracks: `python3 .claude/skills/home-video/scripts/music_library.py <folder> --into assets/music`.
 
 ## AI clips (optional, paid)
 

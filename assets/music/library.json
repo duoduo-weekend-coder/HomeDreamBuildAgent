@@ -1,0 +1,141 @@
+{
+  "tracks": {
+    "Chase The Sun - Bel Tempo.mp3": {
+      "duration": 203.0,
+      "bpm": 137.0,
+      "loudness_db": -11.7,
+      "brightness_hz": 1798,
+      "tone": "balanced",
+      "energy": "varied",
+      "suits": [
+        "showcase"
+      ],
+      "starts": {
+        "showcase": {
+          "15": 140.37,
+          "30": 140.37
+        },
+        "build": {
+          "15": 136.86,
+          "30": 133.36
+        },
+        "default": {
+          "15": 152.63,
+          "30": 140.37
+        }
+      },
+      "license": "unknown: check before publishing"
+    },
+    "Doghouse - Blue Deer Studio.mp3": {
+      "duration": 211.5,
+      "bpm": 95.0,
+      "loudness_db": -11.8,
+      "brightness_hz": 2525,
+      "tone": "bright",
+      "energy": "varied",
+      "suits": [
+        "walkthrough",
+        "drone"
+      ],
+      "starts": {
+        "showcase": {
+          "15": 30.57,
+          "30": 30.57
+        },
+        "build": {
+          "15": 28.04,
+          "30": 25.52
+        },
+        "default": {
+          "15": 144.26,
+          "30": 129.1
+        }
+      },
+      "license": "unknown: check before publishing"
+    },
+    "Happy Tails - Blue Deer Studio.mp3": {
+      "duration": 137.0,
+      "bpm": 117.0,
+      "loudness_db": -11.4,
+      "brightness_hz": 2018,
+      "tone": "balanced",
+      "energy": "steady",
+      "suits": [
+        "showcase",
+        "walkthrough",
+        "drone"
+      ],
+      "starts": {
+        "showcase": {
+          "15": 25.11,
+          "30": 25.11
+        },
+        "build": {
+          "15": 21.01,
+          "30": 18.95
+        },
+        "default": {
+          "15": 25.11,
+          "30": 27.16
+        }
+      },
+      "license": "unknown: check before publishing"
+    },
+    "aurosonmusic-inspiring-pop-motion-upbeat-background-music-577738.mp3": {
+      "duration": 91.0,
+      "bpm": 83.4,
+      "loudness_db": -14.1,
+      "brightness_hz": 2750,
+      "tone": "bright",
+      "energy": "steady",
+      "suits": [
+        "walkthrough",
+        "drone"
+      ],
+      "starts": {
+        "showcase": {
+          "15": 35.17,
+          "30": 26.53
+        },
+        "build": {
+          "15": 72.59,
+          "30": 23.65
+        },
+        "default": {
+          "15": 38.05,
+          "30": 38.05
+        }
+      },
+      "license": "Pixabay Content License (OK in videos, incl. commercial; don't redistribute the file)",
+      "source": "pixabay.com"
+    },
+    "sergepavkinmusic-breath-of-spring-197692.mp3": {
+      "duration": 231.0,
+      "bpm": 73.3,
+      "loudness_db": -19.5,
+      "brightness_hz": 1105,
+      "tone": "warm",
+      "energy": "builds",
+      "suits": [
+        "build"
+      ],
+      "starts": {
+        "showcase": {
+          "15": 190.52,
+          "30": 190.52
+        },
+        "build": {
+          "15": 118.51,
+          "30": 177.43
+        },
+        "default": {
+          "15": 203.62,
+          "30": 190.52
+        }
+      },
+      "license": "Pixabay Content License (OK in videos, incl. commercial; don't redistribute the file)",
+      "source": "pixabay.com"
+    }
+  },
+  "generated": "2026-10-25"
+}

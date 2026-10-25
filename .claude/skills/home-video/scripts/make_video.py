@@ -52,7 +52,7 @@ NARRATION_LEAD = 0.25
 NARRATION_GAP = 0.15
 MAX_SPEEDUP = 1.15
 
-DEFAULT_VOICES = {"elevenlabs": "21m00Tcm4TlvDq8ikWAM", "openai": "coral", "edge": "en-US-AvaNeural", "say": "Samantha"}
+DEFAULT_VOICES = {"elevenlabs": "a0L48LDiuC3RCS8LXA36", "openai": "coral", "edge": "en-US-AvaNeural", "say": "Samantha"}
 NARRATOR_STYLE = "Warm, confident real-estate narrator. Calm, unhurried pace, friendly and natural."
 
 
@@ -432,12 +432,13 @@ def overlaps(shots: list[dict], style: dict, T: float) -> list[float]:
     return [0.0] + [0.0 if shots[k].get("transition", style["transition"]) == "cut" else T for k in range(1, len(shots))]
 
 
-def music_beat(path: Path) -> tuple[float, float]:
-    """(beat period, first-beat offset) in seconds, from the music's onset strength (spectral flux autocorrelation)."""
+def music_beat(path: Path, start: float = 0.0, length: float = 60.0, period: float | None = None) -> tuple[float, float]:
+    """(beat period, first-beat offset after `start`) in seconds, from the music's onset strength
+    (spectral flux autocorrelation) over `length` seconds from `start`."""
     import numpy as np
 
-    raw = subprocess.run(["ffmpeg", "-v", "error", "-t", "60", "-i", str(path), "-ac", "1", "-ar", "22050", "-f", "s16le", "-"],
-                         capture_output=True, check=True).stdout
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{start:.3f}", "-t", f"{length:.3f}", "-i", str(path),
+                          "-ac", "1", "-ar", "22050", "-f", "s16le", "-"], capture_output=True, check=True).stdout
     x = np.frombuffer(raw, np.int16).astype(np.float32) / 32768
     hop, n = 512, 2048
     frames = np.lib.stride_tricks.sliding_window_view(x, n)[::hop] * np.hanning(n)
@@ -450,12 +451,13 @@ def music_beat(path: Path) -> tuple[float, float]:
     ac = np.correlate(flux, flux, "full")[len(flux) - 1:]
     lags = np.arange(len(ac)) / rate
     window = (lags > 60 / 180) & (lags < 60 / 70)  # 70-180 bpm
-    rough = float(lags[window][np.argmax(ac[window])])
+    rough = period or float(lags[window][np.argmax(ac[window])])  # a known tempo (e.g. from library.json) is only refined
     # Refine: the period and phase whose beat grid lands on the most onset energy over the whole excerpt.
     # Frame i covers samples [i*hop, i*hop+n); its flux rises when an onset enters the window's centre.
     times = np.arange(len(flux)) * hop / 22050 + (n / 2 + hop) / 22050
     best = (-1e9, rough, 0.0)
-    for period in np.arange(rough * 0.97, rough * 1.03, 0.0005):
+    spread = 0.005 if period else 0.03
+    for period in np.arange(rough * (1 - spread), rough * (1 + spread), 0.0005):
         beats = np.arange(0, times[-1] - period, period)
         for phase in np.arange(0, period, 0.005):
             score = np.interp(beats + phase, times, flux).sum()
@@ -474,14 +476,15 @@ def fit_durations(shots: list[dict], target: float, ov: list[float], beat: float
         # The track's tempo isn't known when the storyboard is written, so add or remove half-beats on the
         # longest (or shortest) locked shots until the unlocked shots land between 0.6x and 2x their planned length.
         free_plan = sum(d for d, lock in zip(durs, locked) if not lock)
-        lo, hi = (0.6 * free_plan, 2 * free_plan) if free_plan else (0.0, 0.0)
+        lo, hi = (0.85 * free_plan, 1.4 * free_plan) if free_plan else (0.0, 0.0)
+        adjustable = [i for i in range(len(durs)) if locked[i] and float(shots[i]["beats"]) >= 1]  # never flash cuts
         for _ in range(200):
             room = needed - sum(d for d, lock in zip(durs, locked) if lock)
             if room < lo:
-                k = max((i for i in range(len(durs)) if locked[i] and durs[i] > 0.9 * beat), key=lambda i: durs[i], default=None)
+                k = max((i for i in adjustable if durs[i] > 1.4 * beat), key=lambda i: durs[i], default=None)
                 step = -0.5 * beat
             elif room > hi + (0.5 * beat if not free_plan else 0):
-                k = min((i for i in range(len(durs)) if locked[i]), key=lambda i: durs[i], default=None)
+                k = min(adjustable, key=lambda i: durs[i], default=None)
                 step = 0.5 * beat
             else:
                 break
@@ -519,6 +522,24 @@ def fit_durations(shots: list[dict], target: float, ov: list[float], beat: float
     return durs
 
 
+def library_track(music: Path) -> dict:
+    """The music folder's library.json entry for this track (see music_library.py), or {}."""
+    try:
+        return json.loads((Path(music).parent / "library.json").read_text())["tracks"][Path(music).name]
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
+def library_start(music: Path, kind: str | None, total: float) -> float:
+    """Best excerpt start for this template/length from library.json, else 0."""
+    starts = library_track(music).get("starts", {})
+    by_kind = starts.get(kind or "", starts.get("default", {}))
+    if not by_kind:
+        return 0.0
+    length = min(by_kind, key=lambda n: abs(float(n) - total))
+    return float(by_kind[length])
+
+
 def timeline(sb: dict, shots: list[dict], style: dict, sb_dir: Path, verbose: bool = False):
     """(durations, starts, overlaps, music path, music start offset) for a storyboard; shared with video_metadata.py."""
     total, T = float(sb["duration"]), float(style["transition_duration"])
@@ -527,15 +548,32 @@ def timeline(sb: dict, shots: list[dict], style: dict, sb_dir: Path, verbose: bo
     if sb.get("music") and music is None:
         raise FileNotFoundError(f"Music file not found: {sb['music']}")
     beat, beat_offset = None, 0.0
+    if music:
+        # Where in the track the video starts: the storyboard's music_start, else the best excerpt that
+        # music_library.py found for this template and length, else the beginning.
+        beat_offset = float(sb["music_start"]) if sb.get("music_start") is not None else library_start(music, sb.get("kind"), total)
     if music and sb.get("beat_sync"):
         if sb.get("bpm"):
-            beat, beat_offset = 60 / float(sb["bpm"]), float(sb.get("beat_offset", 0))
+            beat, beat_offset = 60 / float(sb["bpm"]), beat_offset + float(sb.get("beat_offset", 0))
         else:
-            beat, beat_offset = music_beat(music)
+            # Tempo from the library (measured over the loudest minute) when known: short excerpts mislead it.
+            known = library_track(music).get("bpm")
+            beat, phase = music_beat(music, beat_offset, max(total + 10, 30), 60 / known if known else None)
+            beat_offset += phase
         if verbose:
-            print(f"music: {60 / beat:.0f} bpm, first beat at {beat_offset:.2f}s; cutting on the beat")
+            print(f"music: {Path(music).name}, {60 / beat:.0f} bpm, first cut beat at {beat_offset:.2f}s; cutting on the beat")
+    elif music and verbose:
+        print(f"music: {Path(music).name} from {beat_offset:.2f}s")
     durs = fit_durations(shots, total, ov, beat)
-    return durs, shot_starts(durs, ov), ov, music, beat_offset
+    # Snap every shot boundary to a whole frame as it accumulates; rounding each shot separately drifts the cuts.
+    ideal, t, snapped = 0.0, 0.0, []
+    for k, d in enumerate(durs):
+        nxt = ov[k + 1] if k + 1 < len(ov) else 0.0
+        end = round((ideal + d) * FPS) / FPS  # round the exact running time, not the rounded one plus d
+        snapped.append(end - t)
+        ideal += d - nxt
+        t = end - nxt
+    return snapped, shot_starts(snapped, ov), ov, music, beat_offset
 
 
 def shot_starts(durs: list[float], ov: list[float]) -> list[float]:
@@ -701,7 +739,7 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
             graph.append(
                 f"[{n_in}:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim={beat_offset:.3f}:{beat_offset + total:.3f},"
                 f"asetpts=PTS-STARTPTS,volume={style['music_volume']},"
-                f"afade=t=in:d=1,afade=t=out:st={total - 1.5}:d=1.5[mus]"
+                f"afade=t=in:d=0.2,afade=t=out:st={total - 1.5}:d=1.5[mus]"
             )
             n_in += 1
             if voice_labels:

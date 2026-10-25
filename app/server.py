@@ -403,7 +403,8 @@ def template_brief(kind: str, lengths: list[int]) -> str:
     return (f"Template \"{t['label']}\" ({kind}): {t['goal']}\n"
             f"Start from: {files}\nMedia to use: {t['media']}\nStory:\n{story}\n"
             f"Voiceover: {t['voice']}\nPace: {t['pace']}"
-            + (f"\nMusic (required): {t['music'].rstrip('.')}. Use a matching track from assets/music/ and set \"music\" to it; "
+            + (f"\nMusic (required): {t['music'].rstrip('.')}. Pick a track from assets/music/library.md that lists this template under 'suits' and set \"music\" to it "
+               "(leave out music_start: the renderer starts at the track's best excerpt); "
                "if none fits or the folder is empty, render without music and say so in the summary." if t.get("music") else "")
             + (f"\nStyle reference: {t['reference']} (summarised in docs/reference-styles.md)." if t.get("reference") else ""))
 
