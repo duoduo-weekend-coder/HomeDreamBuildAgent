@@ -82,7 +82,11 @@ def thumbnail(entry: dict, src: Path, out_dir: Path) -> Path:
     out = out_dir / f"{src.stem}.jpg"
     if out.exists():
         return out
-    if entry["kind"] == "photo":
+    if entry["kind"] == "photo" and src.suffix.lower() in {".heic", ".heif"}:
+        # ffmpeg decodes HEIC tile grids through an internal filtergraph, so `-vf` fails; sips (macOS) handles them,
+        # same as make_video.py does when rendering.
+        run(["sips", "-s", "format", "jpeg", "-Z", "640", str(src), "--out", str(out)])
+    elif entry["kind"] == "photo":
         run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vf", "scale=640:-2", "-frames:v", "1", str(out)])
     else:
         d = entry["duration"]

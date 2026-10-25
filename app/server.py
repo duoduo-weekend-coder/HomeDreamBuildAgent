@@ -196,6 +196,20 @@ def drive_folder_id(source: str) -> str | None:
     return m.group(1) if m else None
 
 
+def outside_source_dir(source: str) -> Path | None:
+    """A local footage folder outside the project. The agent needs it added with --add-dir: in dontAsk mode,
+    reads and shell commands that touch paths outside the working directory are otherwise denied."""
+    if drive_folder_id(source):
+        return None
+    path = Path(source).expanduser()
+    if not path.is_absolute():
+        path = ROOT / path
+    path = path.resolve()
+    if not path.exists() or path == ROOT or ROOT in path.parents:
+        return None
+    return path if path.is_dir() else path.parent
+
+
 def first_prompt(job: Job) -> str:
     r = job.request
     source = r["source"].strip()
@@ -286,6 +300,9 @@ def describe_tool(name: str, inp: dict) -> str:
 def run_agent(job: Job, prompt: str) -> None:
     cmd = ["claude", "-p", prompt, "--output-format", "stream-json", "--verbose",
            "--permission-mode", "dontAsk", "--allowedTools", *ALLOWED_TOOLS]
+    extra_dir = outside_source_dir(job.request.get("source", ""))
+    if extra_dir:
+        cmd += ["--add-dir", str(extra_dir)]
     if job.session_id:
         cmd += ["--resume", job.session_id]
     job.status = "running"
