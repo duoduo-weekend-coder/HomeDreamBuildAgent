@@ -15,10 +15,10 @@
   "music": null,
   "_music": "Upbeat pop / house / funk, 95-125 bpm (see catalog.json)",
   "beat_sync": true,
-  "captions": false,
+  "captions": true,
   "style": {
     "transition": "cut",
-    "music_volume": 0.9,
+    "music_volume": 0.45,
     "fit": "cover"
   },
   "shots": [
@@ -67,7 +67,11 @@
         "{highlight}",
         "{home_name}"
       ],
-      "layout": "center"
+      "layout": "center",
+      "narration": [
+        "{highlight}.",
+        "Welcome home."
+      ]
     },
     {
       "source": "media/showcase/living.jpg",
@@ -88,7 +92,8 @@
       "beats": 1.5,
       "duration": 1.05,
       "motion": "zoom_in",
-      "motion_amount": 0.04
+      "motion_amount": 0.04,
+      "narration": "Light pours into every room."
     },
     {
       "source": "media/showcase/hero-2.jpg",
@@ -109,7 +114,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "pan_up",
-      "motion_amount": 0.04
+      "motion_amount": 0.04,
+      "narration": "A kitchen built for real life."
     },
     {
       "source": "media/showcase/bedroom.jpg",
@@ -130,7 +136,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "zoom_in",
-      "motion_amount": 0.04
+      "motion_amount": 0.04,
+      "narration": "Calm spaces to unwind."
     },
     {
       "source": "media/showcase/detail-1.jpg",
@@ -151,7 +158,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "zoom_out",
-      "motion_amount": 0.04
+      "motion_amount": 0.04,
+      "narration": "Every finish chosen with care."
     },
     {
       "source": "media/showcase/kitchen-detail.jpg",
@@ -173,7 +181,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "zoom_out",
-      "motion_amount": 0.04
+      "motion_amount": 0.04,
+      "narration": "Inside and out, it all flows."
     },
     {
       "source": "media/showcase/hero-1-other-light",
@@ -187,20 +196,21 @@
       "source": "media/showcase/detail-styled.jpg",
       "duration": 1.6,
       "motion": "zoom_in",
-      "motion_amount": 0.04
+      "motion_amount": 0.04,
+      "narration": [
+        "{slogan}. Find us at {website_spoken}.",
+        "{slogan}."
+      ]
     },
     {
       "source": "media/showcase/calm-wide.jpg",
       "duration": 3.0,
       "motion": "zoom_out",
       "motion_amount": 0.04,
-      "title": [
-        "{highlight}",
-        "{home_name}",
-        "Built with care"
-      ],
-      "subtitle": "Comment BUILD",
-      "layout": "center"
+      "layout": "center",
+      "kicker": "{slogan}",
+      "title": "{website}",
+      "subtitle": "{cta}"
     }
   ]
 }

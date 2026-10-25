@@ -28,6 +28,7 @@
         "{location}"
       ],
       "narration": [
+        "{highlight}. Come take a look inside.",
         "Welcome to {home_name}.",
         "Come take a look inside."
       ]
@@ -73,19 +74,18 @@
       "narration": "and the best view last."
     },
     {
-      "source": "card",
+      "source": "media/tour/exterior-leaving.jpg",
       "duration": 3.0,
+      "motion": "zoom_out",
+      "kicker": "{slogan}",
+      "title": "{website}",
       "layout": "center",
-      "title": [
-        "{highlight}",
-        "{home_name}",
-        "Built with care"
+      "narration": [
+        "{slogan}. Find us at {website_spoken}.",
+        "{slogan}."
       ],
-      "subtitle": [
-        "{builder}",
-        "{location}"
-      ],
-      "kicker": "Comment BUILD to book a tour"
+      "subtitle": "{cta}"
     }
-  ]
+  ],
+  "captions": true
 }

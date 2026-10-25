@@ -15,10 +15,10 @@
   "music": null,
   "_music": "Warm cinematic / acoustic-pop, 75-95 bpm, clear beat (see catalog.json)",
   "beat_sync": true,
-  "captions": false,
+  "captions": true,
   "style": {
     "transition": "cut",
-    "music_volume": 0.9,
+    "music_volume": 0.45,
     "fit": "cover"
   },
   "shots": [
@@ -31,7 +31,11 @@
         "{highlight}",
         "{builder}"
       ],
-      "layout": "center"
+      "layout": "center",
+      "narration": [
+        "{highlight}.",
+        "Here's how we built this one."
+      ]
     },
     {
       "source": "media/process/sheathed-shell.jpg",
@@ -43,7 +47,8 @@
       "source": "media/process/framing-walk-1.mp4",
       "beats": 2,
       "duration": 1.4,
-      "motion": "zoom_in"
+      "motion": "zoom_in",
+      "narration": "It starts with a solid frame, done right."
     },
     {
       "source": "media/process/framing-walk-2.mp4",
@@ -62,7 +67,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "zoom_in",
-      "motion_amount": 0.08
+      "motion_amount": 0.08,
+      "narration": "Then the finishes go in."
     },
     {
       "source": "media/final/stair-detail.jpg",
@@ -83,7 +89,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "zoom_in",
-      "motion_amount": 0.08
+      "motion_amount": 0.08,
+      "narration": "A kitchen made for gathering."
     },
     {
       "source": "media/final/detail-faucet.jpg",
@@ -104,7 +111,8 @@
       "beats": 1,
       "duration": 0.7,
       "motion": "zoom_in",
-      "motion_amount": 0.08
+      "motion_amount": 0.08,
+      "narration": "Details you notice every day."
     },
     {
       "source": "media/final/powder-detail.jpg",
@@ -125,7 +133,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "pan_left",
-      "motion_amount": 0.08
+      "motion_amount": 0.08,
+      "narration": "Light in every room."
     },
     {
       "source": "media/final/living-wide.jpg",
@@ -139,7 +148,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "zoom_in",
-      "motion_amount": 0.08
+      "motion_amount": 0.08,
+      "narration": "A quiet place to rest."
     },
     {
       "source": "media/final/bath-detail.jpg",
@@ -158,20 +168,21 @@
       "source": "media/final/exterior-wide.jpg",
       "duration": 2.4,
       "motion": "pan_right",
-      "motion_amount": 0.06
+      "motion_amount": 0.06,
+      "narration": [
+        "{slogan}. Find us at {website_spoken}.",
+        "{slogan}."
+      ]
     },
     {
       "source": "media/final/outdoor-living.jpg",
       "duration": 2.8,
       "motion": "zoom_in",
       "motion_amount": 0.06,
-      "title": [
-        "{highlight}",
-        "{home_name}",
-        "Built with care"
-      ],
-      "subtitle": "Comment BUILD",
-      "layout": "center"
+      "layout": "center",
+      "kicker": "{slogan}",
+      "title": "{website}",
+      "subtitle": "{cta}"
     }
   ]
 }

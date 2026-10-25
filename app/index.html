@@ -5,122 +5,265 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Home Video Studio</title>
 <style>
+  /* Fraunces Light for headlines and the names of templates and videos; Outfit for everything else. */
+  @font-face { font-family: "Fraunces"; src: url(/assets/fraunces-light-latin.woff2) format("woff2"); font-weight: 300; font-display: swap; }
+  @font-face { font-family: "Outfit"; src: url(/assets/outfit-latin.woff2) format("woff2"); font-weight: 400 500; font-display: swap; }
+  /* Light lavender: soft lilac surfaces, deep plum text, one violet for actions. */
   :root {
-    --bg: #f6f3ee; --panel: #ffffff; --ink: #1f2420; --muted: #6b716b; --line: #e4dfd6;
-    --accent: #2f5d4a; --accent-ink: #ffffff; --soft: #eef3ef; --warn: #a3471f; --ok: #2f7d4f;
-    --chip: #f0ece4; --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #151816; --panel: #1d211e; --ink: #e9ece8; --muted: #9aa29b; --line: #2e3430;
-            --accent: #7fb89c; --accent-ink: #0f1411; --soft: #1f2a24; --warn: #e48a62; --ok: #7fcf9c; --chip: #262b27;
-            --shadow: none; }
+    --bg: #f7f4fb; --surface: #fdfcff; --ink: #2e2640; --muted: #6c6380; --line: #e4dcf0;
+    --accent: #7c4ddb; --accent-deep: #6236c4; --on-accent: #ffffff; --flag: #e46bb0; --plywood: #c4b2ea;
+    --link: #6a3fc8; --warn: #b0412a; --ok: #3f7a52;
+    /* the cartoon house */
+    --h-ground: #ebe4f5; --h-dirt: #b39a9a; --h-concrete: #bdb6c8; --h-wood: #d9b07a; --h-siding: #cfc1ea;
+    --h-siding-line: #bcaadf; --h-roof: #4b3a6b; --h-glow: #ffe29a; --h-leaf: #7fa36b; --h-hat: #f2b632;
+    --h-skin: #e0b08a; --h-sun: #f7c548;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Avenir Next", "Segoe UI", sans-serif; }
-  header { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 5; }
-  header h1 { font-size: 18px; margin: 0; letter-spacing: .2px; cursor: pointer; }
-  header h1 span { color: var(--muted); font-weight: 400; }
-  main { max-width: 1180px; margin: 0 auto; padding: 24px 28px 60px; }
-  .grid { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 24px; align-items: start; }
-  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } main, header { padding-left: 16px; padding-right: 16px; } }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; box-shadow: var(--shadow); }
-  h2 { font-size: 16px; margin: 0 0 14px; }
-  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 20px 0 8px; font-weight: 600; }
-  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 5px; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 "Outfit", -apple-system, "Helvetica Neue", sans-serif; }
+  b, strong, th { font-weight: 500; }
+    :focus-visible { outline: 2px solid var(--accent-deep); outline-offset: 2px; }
+  a { color: var(--link); }
+  h1, h2, h3 { font-family: "Fraunces", Georgia, serif; font-weight: 300; font-optical-sizing: auto; line-height: 1.12; margin: 0; letter-spacing: -.01em; }
+  h2 { font-size: 28px; margin-bottom: 14px; }
+  h3 { font-size: 20px; margin-bottom: 8px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .wordmark { font-family: "Fraunces", Georgia, serif; font-size: 26px; font-weight: 300; color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
+  main { max-width: 1280px; margin: 0 auto; padding: 28px 28px 80px; }
+
+  /* ---------- controls */
+  label { display: block; font-size: 14px; font-weight: 500; margin: 18px 0 6px; }
+  fieldset { border: 0; padding: 0; margin: 22px 0 0; min-width: 0; }
+  legend { padding: 0; font-size: 14px; font-weight: 500; margin: 0 0 6px; }
+  .opt { font-weight: 400; color: var(--muted); }
   input[type=text], input[type=password], textarea, select {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); font: inherit; }
-  textarea { min-height: 70px; resize: vertical; }
-  input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
-  .toggle { position: relative; }
-  .toggle input { position: absolute; opacity: 0; }
-  .toggle span { display: inline-block; padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; background: var(--bg); user-select: none; font-size: 14px; }
-  .toggle input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  .toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .templates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .tpl { position: relative; display: block; margin: 0; cursor: pointer; }
-  .tpl input { position: absolute; opacity: 0; }
-  .tpl .body { display: block; height: 100%; padding: 12px 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); }
-  .tpl .num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--chip); color: var(--muted); font-size: 11px; font-weight: 700; margin-right: 6px; }
-  .tpl b { font-size: 14px; }
-  .tpl .tag { display: block; font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
-  .tpl .flow { display: block; font-size: 11.5px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); line-height: 1.45; }
-  .tpl input:checked + .body { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--soft); }
-  .tpl input:checked + .body .num { background: var(--accent); color: var(--accent-ink); }
-  .tpl input:focus-visible + .body { outline: 2px solid var(--accent); outline-offset: 2px; }
-  @media (max-width: 520px) { .templates { grid-template-columns: 1fr; } }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
-  details summary { cursor: pointer; color: var(--muted); font-size: 14px; margin-top: 16px; }
-  button { font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 9px 14px; }
-  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; width: 100%; padding: 12px; margin-top: 18px; }
+    width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface);
+    color: var(--ink); font: inherit; }
+  input[type=text]:focus, input[type=password]:focus, textarea:focus, select:focus { outline: 2px solid var(--accent-deep); outline-offset: -1px; }
+  textarea { min-height: 72px; resize: vertical; }
+  .hint { font-size: 13px; color: var(--muted); margin-top: 6px; max-width: 62ch; }
+  .error { color: var(--warn); font-size: 14px; margin-top: 10px; }
+  .error:empty { display: none; }
+  button { font: inherit; cursor: pointer; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 9px 14px; }
   button:disabled { opacity: .5; cursor: default; }
-  .hint { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  button.go { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 500; }
+  button.ghost { background: none; border-color: transparent; color: var(--muted); }
+  button.ghost:hover { color: var(--ink); }
+  button.link { background: none; border: none; color: var(--link); padding: 0; text-decoration: underline; }
   .musicrow { display: flex; gap: 8px; align-items: center; }
   .musicrow select { flex: 1; min-width: 0; }
   .musicrow button { white-space: nowrap; }
   .warnline { color: var(--warn); }
-  .error { color: var(--warn); font-size: 14px; margin-top: 10px; }
-  .jobs { display: flex; flex-direction: column; gap: 10px; }
-  .job { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); cursor: pointer; }
-  .job:hover { border-color: var(--accent); }
-  .job .meta { font-size: 13px; color: var(--muted); }
-  .usage { font-size: 12.5px; color: var(--muted); }
-  .usage span { cursor: help; border-bottom: 1px dotted var(--line); }
-  .pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--chip); white-space: nowrap; }
-  .pill.running, .pill.queued { background: var(--soft); color: var(--accent); }
-  .pill.done { color: var(--ok); }
-  .pill.failed, .pill.cancelled, .pill.interrupted { color: var(--warn); }
-  .pill.running::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: 6px; animation: pulse 1.2s infinite; vertical-align: 1px; }
+  .icon-btn { display: inline-flex; align-items: center; gap: 7px; }
+
+  /* ---------- home */
+  .home { display: grid; grid-template-columns: minmax(0, 540px) minmax(0, 1fr); gap: 56px; align-items: start; }
+  .source input { font-size: 17px; padding: 14px; }
+  .stories { display: grid; gap: 8px; }
+  .story { position: relative; display: block; margin: 0; cursor: pointer; font-weight: 400; }
+  .story input { position: absolute; opacity: 0; }
+  .story .body { display: grid; grid-template-columns: 22px 1fr; gap: 2px 12px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+  .story .box { grid-row: span 3; width: 20px; height: 20px; margin-top: 2px; border: 2px solid var(--muted); border-radius: 4px; display: grid; place-items: center; }
+  .story .box svg { opacity: 0; }
+  .story b { font-family: "Fraunces", Georgia, serif; font-size: 20px; font-weight: 300; line-height: 1.25; }
+  .story .tag { font-size: 13.5px; color: var(--muted); }
+  .story input:checked + .body { border-color: var(--accent-deep); box-shadow: inset 0 0 0 1px var(--accent-deep); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+  .story input:checked + .body .box { background: var(--accent); border-color: var(--accent-deep); color: var(--on-accent); }
+  .story input:checked + .body .box svg { opacity: 1; }
+  .story input:focus-visible + .body { outline: 2px solid var(--link); outline-offset: 2px; }
+  /* the story's shot order, read left to right */
+  .flow { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 8px 0 0; padding: 0; list-style: none; font-size: 12.5px; }
+  .flow li { display: flex; align-items: center; }
+  .flow li + li::before { content: ""; width: 10px; height: 1px; background: var(--muted); margin: 0 3px; }
+  .flow span { padding: 1px 7px; border-radius: 3px; background: var(--bg); white-space: nowrap; }
+  .story input:checked + .body .flow span { background: color-mix(in srgb, var(--accent) 26%, var(--surface)); }
+
+  .pair { display: grid; grid-template-columns: auto 1fr; gap: 0 28px; }
+  .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+  .seg label { margin: 0; font-weight: 400; position: relative; }
+  .seg input { position: absolute; opacity: 0; }
+  .seg span { display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); cursor: pointer; user-select: none; font-size: 14px; }
+  .seg input:checked + span { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .seg input:focus-visible + span { outline: 2px solid var(--link); outline-offset: 2px; }
+  .shape { display: inline-block; border: 1.5px solid currentColor; border-radius: 2px; }
+  details.more { margin-top: 18px; }
+  details.more summary { cursor: pointer; font-weight: 500; font-size: 14px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+
+  /* sticky order bar: what you'll get, and the button */
+  .order { position: sticky; bottom: 0; margin: 24px -14px 0; padding: 14px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -10px 24px -18px rgba(46, 38, 64, .35); display: flex; align-items: center; gap: 16px; }
+  .frames { flex: 1; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 6px; min-height: 40px; }
+  .frame { border: 1.5px solid var(--accent-deep); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); border-radius: 3px; display: grid; place-items: center; font-size: 10.5px; font-weight: 500; height: 40px; }
+  .frames .none { font-size: 13px; color: var(--muted); align-self: center; }
+  .frames .sum { font-size: 13px; color: var(--muted); align-self: center; margin-left: 8px; line-height: 1.35; }
+  .order button { padding: 13px 22px; font-size: 16px; white-space: nowrap; }
+
+  /* poster wall */
+  .wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 26px 18px; }
+  .tile { color: inherit; text-decoration: none; display: block; }
+  .tile .pic { position: relative; aspect-ratio: 3 / 4; border-radius: 6px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+  .tile .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile .pic .house { position: absolute; inset: auto 0 8% 0; width: 100%; }
+  .tile .pic.blank { background: repeating-linear-gradient(-45deg, var(--surface) 0 8px, var(--bg) 8px 16px); }
+  .tile .pic.site { background: linear-gradient(var(--surface) 60%, var(--bg)); }
+  .tile:hover .pic { border-color: var(--accent-deep); }
+  .tile .t { font-family: "Fraunces", Georgia, serif; font-size: 19px; font-weight: 300; margin-top: 8px; line-height: 1.2; }
+  .tile .m { font-size: 13px; color: var(--muted); }
+  .badge { position: absolute; top: 8px; left: 8px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 4px; background: var(--surface); color: var(--ink); }
+  .badge.failed, .badge.interrupted, .badge.cancelled { color: var(--warn); }
+  .badge.running::before, .status.running::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 6px; animation: pulse 1.2s infinite; vertical-align: 1px; }
   @keyframes pulse { 50% { opacity: .25; } }
-  .empty { color: var(--muted); padding: 30px; text-align: center; border: 1px dashed var(--line); border-radius: 12px; }
-  .detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
-  .detail-head h2 { font-size: 22px; margin: 0 0 4px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { font-size: 12px; background: var(--chip); padding: 3px 9px; border-radius: 6px; }
-  .videos { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
-  .video { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; flex: 1 1 340px; max-width: 100%; }
-  .video.tall { flex: 0 1 220px; }
-  .video video { width: 100%; display: block; background: #000; aspect-ratio: var(--ar, 16 / 9); object-fit: contain; }
-  .video .cap { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; font-size: 13px; }
-  .video a { color: var(--accent); }
-  .video .links { display: flex; gap: 12px; }
-  .feed { display: flex; flex-direction: column; gap: 6px; max-height: 520px; overflow-y: auto; padding-right: 4px; }
-  .ev { font-size: 13.5px; }
-  .ev.tool { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding-left: 14px; border-left: 2px solid var(--line); }
-  .ev.tool_error { color: var(--warn); font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding-left: 14px; border-left: 2px solid var(--warn); white-space: pre-wrap; }
-  .ev.say { background: var(--soft); padding: 10px 13px; border-radius: 10px; white-space: pre-wrap; }
-  .ev.feedback { align-self: flex-end; background: var(--accent); color: var(--accent-ink); padding: 9px 13px; border-radius: 10px; max-width: 85%; white-space: pre-wrap; }
-  .ev.status { color: var(--muted); font-size: 12px; text-align: center; }
-  .ev.done { border: 1px solid var(--ok); padding: 10px 13px; border-radius: 10px; white-space: pre-wrap; }
-  .ev.error { border: 1px solid var(--warn); color: var(--warn); padding: 10px 13px; border-radius: 10px; white-space: pre-wrap; }
-  .summary { font-size: 14px; }
-  .summary h1, .summary h2, .summary h3 { text-transform: none; letter-spacing: 0; color: var(--ink); font-size: 15px; margin: 14px 0 6px; }
-  .summary ul { padding-left: 20px; margin: 6px 0; }
-  .summary code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
-  .feedback-box { display: flex; gap: 8px; margin-top: 12px; }
-  .feedback-box textarea { min-height: 46px; }
+  .empty { color: var(--muted); padding: 34px 20px; border: 1.5px dashed var(--line); border-radius: 6px; max-width: 46ch; }
+
+  /* ---------- job page */
+  .back { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--ink); }
+  .job-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 10px 0 24px; }
+  .job-head h1 { font-size: 46px; letter-spacing: -.02em; }
+  .job-head .what { color: var(--muted); margin-top: 6px; }
+  .job-head .right { display: flex; gap: 10px; align-items: center; }
+  .status { font-weight: 500; font-size: 14px; }
+  .status.failed, .status.interrupted, .status.cancelled { color: var(--warn); }
+  .status.done { color: var(--ok); }
+  .job { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 380px); gap: 40px; align-items: start; }
+
+  .player { display: flex; flex-direction: column; align-items: flex-start; }
+  .player video { display: block; background: #000; border-radius: 6px; max-width: 100%; }
+  .player.tall video { height: min(72vh, 760px); width: auto; }
+  .player.wide video { width: 100%; }
+  .player .under { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; margin-top: 10px; font-size: 14px; }
+  .player .under b { font-family: "Fraunces", Georgia, serif; font-weight: 300; font-size: 19px; }
+  .thumbs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .thumbs button { padding: 0; border: 2px solid transparent; background: none; text-align: left; font-size: 12.5px; color: var(--muted); }
+  .thumbs button img { display: block; height: 84px; border-radius: 4px; background: var(--surface); }
+  .thumbs button[aria-pressed=true] { border-color: var(--accent-deep); border-radius: 6px; color: var(--ink); }
+  .thumbs button span { display: block; padding: 3px 4px; }
+
+  .side section + section { margin-top: 28px; }
+  .caption { white-space: pre-wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; margin: 0 0 8px; }
+  .narration { margin: 0; padding: 0; list-style: none; }
+  .narration li { padding: 6px 0 6px 14px; border-left: 3px solid var(--plywood); margin-bottom: 4px; }
+  .msgs { display: flex; flex-direction: column; gap: 8px; }
+  .msg { white-space: pre-wrap; padding: 10px 13px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); }
+  .msg.feedback { align-self: flex-end; max-width: 88%; background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .msg.error { border-color: var(--warn); color: var(--warn); }
+  .msg .when { display: block; font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .feedback-box { display: flex; gap: 8px; margin-top: 10px; align-items: flex-start; }
+  .feedback-box textarea { min-height: 58px; }
+  details.extra { border-top: 1px solid var(--line); padding: 10px 0; }
+  details.extra:last-child { border-bottom: 1px solid var(--line); }
+  details.extra summary { cursor: pointer; font-weight: 500; font-size: 14px; }
+  details.extra > div { margin-top: 10px; font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; vertical-align: top; padding: 5px 8px 5px 0; border-bottom: 1px solid var(--line); }
+  th { font-weight: 500; }
+  td.files { color: var(--muted); word-break: break-all; }
+  .notes h3 { font-size: 16px; margin: 14px 0 6px; }
+  .notes ul { padding-left: 20px; margin: 6px 0; }
+  .notes blockquote { margin: 6px 0; padding-left: 12px; border-left: 3px solid var(--line); }
+  .notes code { background: var(--surface); padding: 1px 5px; border-radius: 3px; font-size: 12.5px; word-break: break-all; }
+  .log { display: flex; flex-direction: column; gap: 4px; max-height: 360px; overflow-y: auto; font-size: 12.5px; color: var(--muted); }
+  .log .say { color: var(--ink); white-space: pre-wrap; padding: 4px 0; }
+  .log .tool_error { color: var(--warn); white-space: pre-wrap; }
+
+  /* ---------- the build scene shown while the agent works */
+  .building { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; align-items: center; padding: 22px 24px; margin-bottom: 26px; background: linear-gradient(#f1eafc, var(--surface) 70%); border: 1px solid var(--line); border-radius: 6px; }
+  .building[hidden] { display: none; }
+  .steps { list-style: none; margin: 0 0 14px; padding: 0; }
+  .steps li { display: flex; align-items: center; gap: 10px; padding: 4px 0; color: var(--muted); }
+  .steps li::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line); }
+  .steps li.done { color: var(--ink); }
+  .steps li.done::before { background: var(--ink); border-color: var(--ink); }
+  .steps li.now { color: var(--ink); font-weight: 500; }
+  .steps li.now::before { border-color: var(--accent); background: var(--accent); animation: pulse 1.2s infinite; }
+  .doing { font-size: 14px; min-height: 2.6em; }
+  .doing .tool { display: block; color: var(--muted); font-size: 12.5px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .waitnote { font-size: 13px; color: var(--muted); margin-top: 12px; }
+
+  .house { display: block; width: 100%; height: auto; overflow: visible; }
+  .house .b1, .house .b2, .house .b3, .house .b4, .house .b5, .house .b6 {
+    opacity: 0; transform-box: fill-box; transform-origin: 50% 100%;
+    transition: opacity .45s ease, transform .8s cubic-bezier(.2, .9, .25, 1.15); transition-delay: calc(var(--d, 0) * 90ms); }
+  .house .b1, .house .b2, .house .b3 { transform: scaleY(0); }
+  .house .b4 { transform: translateY(-70px); }
+  .house .b5, .house .b6 { transform: scale(0); }
+  .house.at-1 .b1, .house.at-2 .b2, .house.at-3 .b3, .house.at-4 .b4, .house.at-5 .b5, .house.at-6 .b6 { opacity: 1; transform: none; }
+  .house .stakes, .house .drone, .house .crane, .house .puffs { transition: opacity .5s; }
+  .house.at-2 .stakes { opacity: 0; }
+  .house .drone { opacity: 0; }
+  .house.at-1 .drone { opacity: 1; }
+  .house.at-2 .drone { opacity: 0; }
+  .house .crane { opacity: 0; }
+  .house.at-2 .crane { opacity: 1; }
+  .house.at-5 .crane { opacity: 0; }
+  .house .puffs { opacity: 0; }
+  .house.at-5 .puffs { opacity: 1; }
+  .house .flag { transform-box: fill-box; transform-origin: 0 50%; animation: flutter 1.1s ease-in-out infinite alternate; }
+  .house .drone-fly { animation: fly 7s ease-in-out infinite alternate; }
+  .house .drone-bob { animation: bob 1.4s ease-in-out infinite alternate; }
+  .house .rotor { transform-box: fill-box; transform-origin: center; animation: spin .18s linear infinite; }
+  .house .beam { animation: scan 2.2s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0; }
+  .house .hook { transform-box: view-box; transform-origin: 262px 64px; animation: swing 2.6s ease-in-out infinite alternate; }
+  .house .arm { transform-box: view-box; transform-origin: 76px 192px; animation: hammer .55s ease-in infinite alternate; }
+  .house .puff { animation: rise 3s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  .house .puff:nth-child(2) { animation-delay: 1s; }
+  .house .puff:nth-child(3) { animation-delay: 2s; }
+  .house.idle .arm { animation: none; }
+  @keyframes flutter { from { transform: skewY(-8deg) scaleX(.9); } to { transform: skewY(6deg) scaleX(1); } }
+  @keyframes fly { from { transform: translateX(-95px); } to { transform: translateX(95px); } }
+  @keyframes bob { to { transform: translateY(-6px); } }
+  @keyframes spin { 50% { transform: scaleX(.2); } }
+  @keyframes scan { from { transform: skewX(-10deg); } to { transform: skewX(10deg); } }
+  @keyframes swing { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+  @keyframes hammer { from { transform: rotate(-35deg); } to { transform: rotate(18deg); } }
+  @keyframes rise { 0% { opacity: 0; transform: translate(0, 0) scale(.5); } 25% { opacity: .8; } 100% { opacity: 0; transform: translate(12px, -46px) scale(1.6); } }
+  .house.mini *, .house.mini { animation: none !important; transition: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .house *, .badge::before, .status::before, .steps li::before { animation: none !important; transition-duration: .01s !important; transition-delay: 0s !important; }
+  }
+
+  /* ---------- voice input */
   .mic-wrap { position: relative; flex: 1; min-width: 0; }
   .mic-wrap input, .mic-wrap textarea { padding-right: 44px; }
   .mic { position: absolute; right: 6px; top: 6px; width: 32px; height: 32px; border-radius: 50%; border: none; padding: 0;
          background: transparent; color: var(--muted); display: grid; place-items: center; }
-  .mic:hover, .mic:focus-visible { color: var(--accent); background: var(--soft); }
+  .source .mic { top: 9px; }
+  .mic:hover, .mic:focus-visible { color: var(--ink); background: var(--bg); }
   .mic.rec { color: #fff; background: #c0392b; animation: pulse 1.2s infinite; }
-  .mic.busy { color: var(--accent); cursor: progress; }
+  .mic.busy { color: var(--link); cursor: progress; }
   .mic.busy svg { animation: pulse .8s infinite; }
   .mic-msg { font-size: 12.5px; color: var(--warn); margin-top: 5px; }
   .mic-msg.info { color: var(--muted); }
-  dialog { border: 1px solid var(--line); border-radius: 14px; padding: 24px; width: min(520px, calc(100vw - 32px)); background: var(--panel); color: var(--ink); }
-  dialog::backdrop { background: rgba(0,0,0,.35); }
+
+  /* ---------- settings */
+  dialog { border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 18px 50px -20px rgba(46, 38, 64, .4); padding: 24px; width: min(520px, calc(100vw - 32px)); background: var(--bg); color: var(--ink); }
+  dialog::backdrop { background: rgba(46, 38, 64, .3); }
+  dialog h2 { margin-bottom: 8px; }
   .voice-row { display: flex; gap: 8px; }
-  .link { background: none; border: none; color: var(--accent); padding: 0; }
+  .dialog-actions { display: flex; gap: 8px; align-items: center; margin-top: 22px; }
+  .dialog-actions .spacer { flex: 1; }
   .status-line { font-size: 13px; margin-top: 8px; }
   .ok-text { color: var(--ok); }
+
+  @media (max-width: 960px) {
+    .home, .job, .building { grid-template-columns: 1fr; gap: 36px; }
+    main { padding: 20px 16px 60px; }
+    header { padding: 12px 16px; }
+    .job-head h1 { font-size: 32px; }
+    .player.tall video { height: min(64vh, 640px); }
+  }
+  @media (max-width: 520px) {
+    .pair, .row2 { grid-template-columns: 1fr; }
+    .order { flex-direction: column; align-items: stretch; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1 onclick="location.hash=''">Home Video Studio <span>· 4 reel templates</span></h1>
-  <button id="settingsBtn" aria-label="Voice settings">Voice settings</button>
+  <a class="wordmark" href="#">Home Video Studio</a>
+  <button id="settingsBtn" class="ghost icon-btn" type="button">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
+    Voice settings</button>
 </header>
 <main id="view"></main>
 
@@ -134,15 +277,16 @@
     <label for="elVoice">Narrator voice</label>
     <div class="voice-row">
       <select id="elVoice"></select>
-      <button id="previewBtn" type="button">▶ Preview</button>
+      <button id="previewBtn" type="button">Play sample</button>
     </div>
+    <div class="hint" id="voiceNote"></div>
   </div>
   <div id="settingsErr" class="error"></div>
-  <div style="display:flex; gap:8px; justify-content:space-between; margin-top:20px;">
+  <div class="dialog-actions">
     <button id="removeKey" class="link" type="button" hidden>Remove key</button>
-    <span style="flex:1"></span>
+    <span class="spacer"></span>
     <button type="button" onclick="settings.close()">Close</button>
-    <button id="saveSettings" type="button" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)">Save</button>
+    <button id="saveSettings" class="go" type="button">Save</button>
   </div>
 </dialog>
 
@@ -151,14 +295,18 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 let TEMPLATES = {};
 const KIND = new Proxy({ overview: "Overview" }, { get: (o, k) => TEMPLATES[k]?.label || o[k] || k });
-// One-line story flow per template, shown on its card.
+// The story order of each template, shown on its card.
 const FLOW = {
-  build: "Site sign → framing walk → finished details → wide rooms → exterior hold",
-  showcase: "Flash teaser → fast cuts on the beat → same angle, new light → calm wide last",
-  drone: "“This was dirt” → aerials in date order → “This is the finish”",
-  walkthrough: "Exterior → entry → living → kitchen → suite → best room last",
+  build: ["Site sign", "Framing walk", "Finished details", "Wide rooms", "Exterior hold"],
+  showcase: ["Flash teaser", "Fast cuts on the beat", "Same angle, new light", "Calm wide last"],
+  drone: ["“This was dirt”", "Aerials by date", "“This is the finish”"],
+  walkthrough: ["Exterior", "Entry", "Living", "Kitchen", "Suite", "Best room last"],
 };
-const STATUS = { queued: "Queued", running: "Working", done: "Done", failed: "Failed", cancelled: "Cancelled", interrupted: "Interrupted" };
+const ASPECT = { "16:9": "horizontal", "9:16": "vertical", "1:1": "square", "4:5": "portrait" };
+const STATUS = { queued: "Queued", running: "Working", done: "Ready", failed: "Failed", cancelled: "Cancelled", interrupted: "Interrupted" };
+const VOICE = { elevenlabs: "ElevenLabs voice", edge: "free Microsoft voice", say: "Mac voice" };
+// What the agent is doing, in order. Stage numbers come from the server (tool_stage in server.py).
+const STAGES = ["Looking through your footage", "Choosing the shots", "Writing the story and voiceover", "Rendering the video", "Checking every frame"];
 let settingsState = { elevenlabs_configured: false };
 let timer = null;
 const audio = new Audio();
@@ -171,66 +319,146 @@ async function api(path, opts = {}) {
   return data;
 }
 
-function ago(t) {
-  const s = Math.round(Date.now() / 1000 - t);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
-  return new Date(t * 1000).toLocaleDateString();
+// "10/25, 3:12 PM": tells apart several videos made from the same footage on the same day
+const created = t => new Date(t * 1000).toLocaleString(undefined, { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
+const jobName = j => list(j.kinds.map(k => KIND[k]));
+
+const list = items => items.length < 3 ? items.join(" and ") : items.slice(0, -1).join(", ") + " and " + items.at(-1);
+
+// "drone-15s-9x16.mp4" -> { label: "Drone + process, 15 s, vertical", w: 9, h: 16 }
+function describeVideo(name) {
+  const m = name.match(/^(\w+)-(\d+)s-(\d+)x(\d+)\.mp4$/);
+  if (!m) return { label: name, w: 16, h: 9 };
+  const [, kind, len, w, h] = m;
+  return { label: `${KIND[kind]}, ${len} s, ${ASPECT[`${w}:${h}`] || `${w}:${h}`}`, short: `${len} s ${ASPECT[`${w}:${h}`] || ""}`, w: +w, h: +h };
 }
 
 function markdown(md) {
   const lines = esc(md).split("\n");
-  let html = "", inList = false;
+  let html = "", open = null;
+  const close = () => { if (open) html += open === "ul" ? "</ul>" : "</tbody></table>"; open = null; };
   for (const raw of lines) {
     const line = raw.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
     const item = line.match(/^\s*[-*] (.*)/);
-    if (item) { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${item[1]}</li>`; continue; }
-    if (inList) { html += "</ul>"; inList = false; }
+    if (item) { if (open !== "ul") { close(); html += "<ul>"; open = "ul"; } html += `<li>${item[1]}</li>`; continue; }
+    if (/^\s*\|/.test(line)) {
+      const cells = line.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      if (cells.every(c => /^:?-+:?$/.test(c))) continue;
+      if (open !== "table") { close(); html += `<table><thead><tr>${cells.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>`; open = "table"; }
+      else html += `<tr>${cells.map(c => `<td>${c}</td>`).join("")}</tr>`;
+      continue;
+    }
+    close();
     const h = line.match(/^(#{1,3}) (.*)/);
+    const quote = line.match(/^&gt;\s?(.*)/);
     if (h) html += `<h3>${h[2]}</h3>`;
+    else if (quote) html += `<blockquote>${quote[1]}</blockquote>`;
     else if (line.trim()) html += `<p>${line}</p>`;
   }
-  return html + (inList ? "</ul>" : "");
+  close();
+  return html;
 }
+
+// ---------------------------------------------------------------- the cartoon house
+
+function houseSVG(cls = "") {
+  const studs = Array.from({ length: 13 }, (_, i) =>
+    `<rect class="b2" style="--d:${i + 2}" x="${122 + i * 12.6}" y="132" width="4" height="72" fill="var(--h-wood)"/>`).join("");
+  const siding = Array.from({ length: 8 }, (_, i) => `<path d="M120 ${139 + i * 9}h160" stroke="var(--h-siding-line)" stroke-width="1.5"/>`).join("");
+  return `
+  <svg class="house ${cls}" viewBox="0 0 400 250" role="img" aria-label="A cartoon house being built">
+    <rect x="0" y="220" width="400" height="30" fill="var(--h-ground)"/>
+    <rect x="96" y="218" width="208" height="5" rx="2" fill="var(--h-dirt)"/>
+    <g class="b6"><circle cx="58" cy="54" r="20" fill="var(--h-sun)"/></g>
+    <g class="stakes">
+      <g transform="translate(104 184)"><rect width="3" height="36" fill="var(--h-wood)"/><path class="flag" d="M3 2l20 5-20 6z" fill="var(--flag)"/></g>
+      <g transform="translate(292 184)"><rect width="3" height="36" fill="var(--h-wood)"/><path class="flag" d="M3 2l20 5-20 6z" fill="var(--flag)"/></g>
+    </g>
+    <g class="crane">
+      <rect x="345" y="58" width="8" height="162" fill="none" stroke="var(--h-hat)" stroke-width="2.5"/>
+      <path d="M345 70l8 14M353 84l-8 14M345 98l8 14M353 112l-8 14M345 126l8 14M353 140l-8 14M345 154l8 14M353 168l-8 14M345 182l8 14M353 196l-8 14" stroke="var(--h-hat)" stroke-width="1.5"/>
+      <rect x="236" y="56" width="140" height="5" fill="var(--h-hat)"/>
+      <rect x="362" y="61" width="16" height="10" fill="var(--h-roof)"/>
+      <rect x="337" y="62" width="14" height="12" rx="2" fill="var(--h-hat)"/>
+      <g class="hook"><path d="M262 61v52" stroke="var(--ink)" stroke-width="1.5"/><path d="M258 113h8v5a4 4 0 0 1-8 0z" fill="var(--ink)"/></g>
+    </g>
+    <rect class="b1" x="114" y="204" width="172" height="16" rx="1" fill="var(--h-concrete)"/>
+    <g>${studs}
+      <rect class="b2" style="--d:0" x="120" y="200" width="160" height="5" fill="var(--h-wood)"/>
+      <rect class="b2" style="--d:16" x="120" y="128" width="160" height="5" fill="var(--h-wood)"/>
+    </g>
+    <g class="b3"><rect x="120" y="130" width="160" height="74" fill="var(--h-siding)"/>${siding}</g>
+    <rect class="b5" style="--d:5" x="244" y="76" width="16" height="34" fill="var(--h-concrete)"/>
+    <g class="puffs"><circle class="puff" cx="252" cy="70" r="6" fill="var(--line)"/><circle class="puff" cx="252" cy="70" r="6" fill="var(--line)"/><circle class="puff" cx="252" cy="70" r="6" fill="var(--line)"/></g>
+    <g class="b4"><path d="M102 136L200 70l98 66z" fill="var(--h-roof)"/><path d="M102 136h196" stroke="var(--h-wood)" stroke-width="3"/></g>
+    <rect class="b5" style="--d:1" x="134" y="146" width="32" height="26" rx="1" fill="var(--h-glow)" stroke="var(--h-wood)" stroke-width="3"/>
+    <rect class="b5" style="--d:2" x="234" y="146" width="32" height="26" rx="1" fill="var(--h-glow)" stroke="var(--h-wood)" stroke-width="3"/>
+    <g class="b5" style="--d:3"><rect x="186" y="164" width="28" height="40" fill="var(--accent)"/><circle cx="208" cy="185" r="2" fill="var(--h-glow)"/></g>
+    <circle class="b5" style="--d:4" cx="200" cy="108" r="7" fill="var(--h-glow)" stroke="var(--h-wood)" stroke-width="2.5"/>
+    <g class="b5" style="--d:6"><circle cx="128" cy="212" r="11" fill="var(--h-leaf)"/><circle cx="146" cy="215" r="8" fill="var(--h-leaf)"/></g>
+    <g class="b5" style="--d:7"><circle cx="272" cy="212" r="11" fill="var(--h-leaf)"/><circle cx="254" cy="215" r="8" fill="var(--h-leaf)"/></g>
+    <g class="drone" transform="translate(200 52)"><g class="drone-fly"><g class="drone-bob">
+      <path class="beam" d="M-5 4L-30 120h60L5 4z" fill="var(--flag)" opacity=".16"/>
+      <path d="M-18-5h36" stroke="var(--ink)" stroke-width="2"/>
+      <rect x="-9" y="-6" width="18" height="10" rx="4" fill="var(--ink)"/>
+      <ellipse class="rotor" cx="-18" cy="-8" rx="10" ry="2" fill="var(--muted)"/>
+      <ellipse class="rotor" cx="18" cy="-8" rx="10" ry="2" fill="var(--muted)"/>
+    </g></g></g>
+    <g class="worker">
+      <rect x="64" y="204" width="5" height="16" fill="var(--h-roof)"/><rect x="71" y="204" width="5" height="16" fill="var(--h-roof)"/>
+      <rect x="62" y="186" width="16" height="20" rx="3" fill="var(--flag)"/>
+      <circle cx="70" cy="178" r="7" fill="var(--h-skin)"/>
+      <path d="M61 177a9 8 0 0 1 18 0z" fill="var(--h-hat)"/><rect x="59" y="176" width="22" height="2.5" rx="1" fill="var(--h-hat)"/>
+      <g class="arm"><path d="M76 192l12-8" stroke="var(--h-skin)" stroke-width="4" stroke-linecap="round"/><path d="M88 184l2 -10" stroke="var(--h-wood)" stroke-width="2.5"/><rect x="85" y="169" width="10" height="6" rx="1" fill="var(--h-roof)"/></g>
+    </g>
+  </svg>`;
+}
+
+const reached = (n, extra = "") => Array.from({ length: n }, (_, i) => `at-${i + 1}`).join(" ") + (extra ? " " + extra : "");
 
 // ---------------------------------------------------------------- home
 
 function homeView() {
   const eleven = settingsState.elevenlabs_configured;
+  const check = `<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5l2.5 2.5L10 3.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
   $("#view").innerHTML = `
-  <div class="grid">
-    <form class="card" id="newJob">
+  <div class="home">
+    <form id="newJob">
       <h2>New video</h2>
-      <label for="source">Footage</label>
-      <input id="source" type="text" placeholder="Google Drive folder link, or a folder on this Mac" required>
-      <div class="hint">The agent reads Drive metadata first and downloads only the shots it uses.</div>
-
-      <h3>Template</h3>
-      <div class="templates">
-        ${Object.entries(TEMPLATES).map(([k, t], i) => `
-        <label class="tpl"><input type="checkbox" name="kinds" value="${k}" ${i === 0 ? "checked" : ""}>
-          <span class="body"><span class="num">${i + 1}</span><b>${esc(t.label)}</b>
-            <span class="tag">${esc(t.tagline)}</span>
-            <span class="flow">${esc(FLOW[k] || "")}</span></span></label>`).join("")}
+      <div class="source">
+        <label for="source">Footage</label>
+        <input id="source" type="text" placeholder="Google Drive folder link, or a folder on this Mac" required>
+        <div class="hint">The agent reads Drive metadata first and downloads only the shots it uses.</div>
       </div>
-      <div class="hint">Pick one or more; each template is made in every length and format below.</div>
 
-      <label for="highlight">Highlight message (optional)</label>
+      <fieldset>
+        <legend>Stories <span class="opt">(pick one or more)</span></legend>
+        <div class="stories">
+          ${Object.entries(TEMPLATES).map(([k, t], i) => `
+          <label class="story"><input type="checkbox" name="kinds" value="${k}" ${i === 0 ? "checked" : ""}>
+            <span class="body"><span class="box">${check}</span><b>${esc(t.label)}</b>
+              <span class="tag">${esc(t.tagline)}</span>
+              <ol class="flow" aria-label="Shot order">${(FLOW[k] || []).map(s => `<li><span>${esc(s)}</span></li>`).join("")}</ol></span></label>`).join("")}
+        </div>
+      </fieldset>
+
+      <div class="pair">
+        <fieldset><legend>Length</legend>
+          <div class="seg">
+            <label><input type="checkbox" name="lengths" value="15" checked><span>15 s</span></label>
+            <label><input type="checkbox" name="lengths" value="30"><span>30 s</span></label>
+          </div></fieldset>
+        <fieldset><legend>Format</legend>
+          <div class="seg">
+            <label><input type="checkbox" name="aspects" value="9:16" checked><span><i class="shape" style="width:8px;height:14px"></i>Vertical</span></label>
+            <label><input type="checkbox" name="aspects" value="16:9"><span><i class="shape" style="width:16px;height:9px"></i>Horizontal</span></label>
+            <label><input type="checkbox" name="aspects" value="1:1"><span><i class="shape" style="width:11px;height:11px"></i>Square</span></label>
+          </div></fieldset>
+      </div>
+
+      <label for="highlight">Highlight message <span class="opt">(optional)</span></label>
       <input id="highlight" type="text" data-voice maxlength="120" placeholder="e.g. Built in 10 months, on time and on budget">
       <div class="hint">Shown word for word as the opening title and on the end card, and worked into the voiceover.</div>
-      <h3>Length</h3>
-      <div class="toggles">
-        <label class="toggle"><input type="checkbox" name="lengths" value="15" checked><span>15 s</span></label>
-        <label class="toggle"><input type="checkbox" name="lengths" value="30"><span>30 s</span></label>
-      </div>
-      <h3>Format</h3>
-      <div class="toggles">
-        <label class="toggle"><input type="checkbox" name="aspects" value="16:9"><span>Horizontal 16:9</span></label>
-        <label class="toggle"><input type="checkbox" name="aspects" value="9:16" checked><span>Vertical 9:16</span></label>
-        <label class="toggle"><input type="checkbox" name="aspects" value="1:1"><span>Square 1:1</span></label>
-      </div>
-      <div class="hint" id="count"></div>
 
       <label for="music">Music</label>
       <div class="musicrow">
@@ -240,47 +468,62 @@ function homeView() {
       <div class="hint" id="musicHint"></div>
       <label for="voice">Narrator</label>
       <select id="voice">
-        <option value="elevenlabs" ${eleven ? "selected" : "disabled"}>ElevenLabs${eleven ? (settingsState.elevenlabs_voice_name ? " · " + esc(settingsState.elevenlabs_voice_name) : "") : " (add key in Voice settings)"}</option>
+        ${eleven ? `<option value="elevenlabs" selected>ElevenLabs${settingsState.elevenlabs_voice_name ? ": " + esc(settingsState.elevenlabs_voice_name) : ""}</option>` : ""}
         <option value="edge" ${eleven ? "" : "selected"}>Free natural voice (Microsoft)</option>
         <option value="say">Mac voice (draft quality)</option>
+        ${eleven ? "" : `<option value="add">Add an ElevenLabs key…</option>`}
       </select>
 
-      <details>
-        <summary>Home details (optional)</summary>
+      <details class="more">
+        <summary>Home details <span class="opt">(optional)</span></summary>
         <div class="hint">Used in titles and narration when given. Nothing is made up when left blank.</div>
         <div class="row2">
           <div><label for="home_name">Home name</label><input id="home_name" type="text" data-voice placeholder="e.g. The Maple House"></div>
           <div><label for="location">Location</label><input id="location" type="text" data-voice placeholder="e.g. Sammamish, WA"></div>
-          <div><label for="specs">Specs</label><input id="specs" type="text" data-voice placeholder="4 bed · 3 bath · 2,800 sq ft"></div>
+          <div><label for="specs">Specs</label><input id="specs" type="text" data-voice placeholder="4 bed, 3 bath, 2,800 sq ft"></div>
           <div><label for="builder">Builder</label><input id="builder" type="text" data-voice placeholder="Company name"></div>
         </div>
       </details>
-      <label for="notes">Anything else for the agent? (optional)</label>
+      <label for="notes">Anything else for the agent? <span class="opt">(optional)</span></label>
       <textarea id="notes" data-voice placeholder="e.g. Use the snowy aerials, keep it calm, end on the street view"></textarea>
       <div class="error" id="formErr"></div>
-      <button class="primary" type="submit" id="submitBtn">Make videos</button>
+
+      <div class="order">
+        <div class="frames" id="frames" aria-live="polite"></div>
+        <button class="go" type="submit" id="submitBtn">Make video</button>
+      </div>
     </form>
+
     <section>
-      <h2>Jobs</h2>
-      <div class="jobs" id="jobs"><div class="empty">Loading…</div></div>
+      <h2>Your videos</h2>
+      <div class="wall" id="jobs"><div class="empty">Loading…</div></div>
     </section>
   </div>`;
   const form = $("#newJob");
+  const pick = k => [...form.querySelectorAll(`input[name=${k}]:checked`)].map(i => i.value);
   const updateCount = () => {
-    const n = ["kinds", "lengths", "aspects"].map(k => form.querySelectorAll(`input[name=${k}]:checked`).length).reduce((a, b) => a * b, 1);
-    $("#count").textContent = n ? `Makes ${n} video${n > 1 ? "s" : ""}.` : "Pick at least one of each.";
+    const kinds = pick("kinds"), lengths = pick("lengths"), aspects = pick("aspects");
+    const n = kinds.length * lengths.length * aspects.length;
+    $("#submitBtn").textContent = n > 1 ? `Make ${n} videos` : "Make video";
+    $("#submitBtn").disabled = !n;
+    const frames = [];
+    for (const k of kinds) for (const l of lengths) for (const a of aspects) {
+      const [w, h] = a.split(":").map(Number);
+      frames.push(`<span class="frame" style="aspect-ratio:${w}/${h}" title="${esc(`${KIND[k]}, ${l} s, ${ASPECT[a]}`)}">${l}s</span>`);
+    }
+    $("#frames").innerHTML = n ? frames.join("") + `<span class="sum">${esc(list(kinds.map(k => KIND[k])))}<br>${esc(list(lengths.map(l => l + " s")))}, ${esc(list(aspects.map(a => ASPECT[a])))}</span>`
+      : `<span class="none">Pick at least one story, length and format.</span>`;
   };
   addMics(form);
   form.addEventListener("change", updateCount);
   updateCount();
-  const checked = k => [...form.querySelectorAll(`input[name=${k}]:checked`)].map(i => i.value);
-  fillMusic(checked("kinds"));
-  form.addEventListener("change", e => { if (e.target.name === "kinds") fillMusic(checked("kinds")); });
-  $("#music").addEventListener("change", () => musicHint(checked("kinds")));
-  $("#musicPlay").onclick = () => previewMusic(checked("kinds"), checked("lengths"));
+  fillMusic(pick("kinds"));
+  form.addEventListener("change", e => { if (e.target.name === "kinds") fillMusic(pick("kinds")); });
+  $("#music").addEventListener("change", () => musicHint(pick("kinds")));
+  $("#musicPlay").onclick = () => previewMusic(pick("kinds"), pick("lengths"));
+  $("#voice").addEventListener("change", e => { if (e.target.value === "add") { e.target.value = "edge"; openSettings(); } });
   form.addEventListener("submit", async e => {
     e.preventDefault();
-    const pick = k => [...form.querySelectorAll(`input[name=${k}]:checked`)].map(i => i.value);
     $("#submitBtn").disabled = true;
     $("#formErr").textContent = "";
     try {
@@ -294,116 +537,234 @@ function homeView() {
       $("#submitBtn").disabled = false;
     }
   });
+  let lastWall = "";
+  refreshJobs = async () => {
+    const items = await api("/api/jobs").catch(() => null);
+    const el = $("#jobs");
+    if (!items || !el) return;
+    const html = items.length ? items.map(j => {
+      const busy = j.status === "running" || j.status === "queued";
+      // a busy job shows the house going up; a finished one its first frame
+      const pic = busy ? houseSVG(reached(j.stage || 0))
+        : j.poster ? `<img src="${j.poster}" alt="" loading="lazy" onerror="this.parentElement.classList.add('blank'); this.remove()">` : "";
+      return `
+      <a class="tile" href="#/job/${j.id}">
+        <div class="pic ${busy ? "site" : pic ? "" : "blank"}">${pic}${j.status !== "done" ? `<span class="badge ${j.status}">${STATUS[j.status] || j.status}</span>` : ""}</div>
+        <div class="t">${esc(jobName(j))}</div>
+        <div class="m">${j.home ? esc(j.home) + ", c" : "C"}reated ${created(j.created)}</div>
+      </a>`; }).join("")
+      : `<div class="empty">No videos yet. Paste a footage folder, pick a story and make your first one.</div>`;
+    if (html !== lastWall) { el.innerHTML = html; lastWall = html; }
+  };
   refreshJobs();
   timer = setInterval(refreshJobs, 4000);
 }
+let refreshJobs = () => {};
 
-async function refreshJobs() {
-  const list = await api("/api/jobs").catch(() => null);
-  const el = $("#jobs");
-  if (!list || !el) return;
-  el.innerHTML = list.length ? list.map(j => `
-    <div class="job" tabindex="0" onclick="location.hash='#/job/${j.id}'" onkeydown="if(event.key==='Enter')location.hash='#/job/${j.id}'">
-      <div>
-        <div><b>${esc(j.title)}</b></div>
-        <div class="meta">${j.kinds.map(k => KIND[k]).join(" + ")} · ${j.lengths.map(l => l + "s").join(", ")} · ${j.aspects.join(", ")} · ${ago(j.created)}${j.videos ? ` · ${j.videos} video${j.videos > 1 ? "s" : ""}` : ""}</div>
-      </div>
-      <span class="pill ${j.status}">${STATUS[j.status] || j.status}</span>
-    </div>`).join("") : `<div class="empty">No jobs yet. Your videos will show up here.</div>`;
-}
-
-// ---------------------------------------------------------------- job detail
+// ---------------------------------------------------------------- job page
 
 async function jobView(id) {
-  let since = 0, lastStatus = null, outputsKey = "", summaryText = null;
+  const st = { since: 0, outputsKey: "", summary: null, selected: null, outputs: [], stage: 0, started: null,
+               wasBusy: null, lastSay: "", lastTool: "", job: null };
   $("#view").innerHTML = `
-    <div class="detail-head">
-      <div><h2 id="jTitle">…</h2><div class="chips" id="jChips"></div></div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <span class="usage" id="jUsage"></span>
-        <span class="pill" id="jStatus"></span>
-        <button id="cancelBtn" hidden>Cancel</button>
-        <button onclick="location.hash=''">← All jobs</button>
+    <a class="back" href="#"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>All videos</a>
+    <div class="job-head">
+      <div><h1 id="jTitle">&nbsp;</h1><div class="what" id="jWhat"></div></div>
+      <div class="right">
+        <span class="status" id="jStatus"></span>
+        <button id="cancelBtn" type="button" hidden>Stop</button>
       </div>
     </div>
-    <div class="grid" style="grid-template-columns: minmax(0,1fr) minmax(0,400px);">
+    <div class="job">
       <section>
-        <div class="videos" id="videos"></div>
-        <div id="noVideos" class="empty">Videos appear here as soon as they're rendered.</div>
-        <div class="card" id="summaryCard" style="margin-top:18px" hidden><h2>Summary from the agent</h2><div class="summary" id="summary"></div></div>
+        <div class="building" id="building" hidden>
+          <div id="scene">${houseSVG()}</div>
+          <div>
+            <ol class="steps" id="steps">${STAGES.map(s => `<li>${s}</li>`).join("")}</ol>
+            <div class="doing" id="doing"></div>
+            <div class="waitnote" id="waitnote"></div>
+          </div>
+        </div>
+        <div id="stage"></div>
       </section>
-      <section class="card">
-        <h2>Agent progress</h2>
-        <div class="feed" id="feed"></div>
-        <form class="feedback-box" id="fbForm">
-          <textarea id="fbText" data-voice placeholder="Ask for changes, e.g. 'shorter titles' or 'use more of the snowy street shots'"></textarea>
-          <button type="submit" id="fbBtn">Send</button>
-        </form>
-        <div class="error" id="fbErr"></div>
-      </section>
+      <aside class="side">
+        <section id="captionSec" hidden><h3>Caption</h3><p class="caption" id="caption"></p>
+          <button type="button" id="copyBtn">Copy caption</button></section>
+        <section id="narrSec" hidden><h3>Narration</h3><ul class="narration" id="narration"></ul></section>
+        <section>
+          <h3>Changes</h3>
+          <div class="msgs" id="msgs"></div>
+          <form class="feedback-box" id="fbForm">
+            <textarea id="fbText" data-voice aria-label="Ask for changes"></textarea>
+            <button type="submit" id="fbBtn">Send</button>
+          </form>
+          <div class="error" id="fbErr"></div>
+        </section>
+        <section>
+          <details class="extra" id="shotsSec" hidden><summary>Shot list</summary><div id="shots"></div></details>
+          <details class="extra" id="notesSec" hidden><summary>Agent's notes</summary><div class="notes" id="notes"></div></details>
+          <details class="extra" id="usageSec" hidden><summary>Usage</summary><div id="usage"></div></details>
+          <details class="extra"><summary>Agent log</summary><div class="log" id="log"></div></details>
+        </section>
+      </aside>
     </div>`;
   addMics($("#fbForm"));
-  $("#cancelBtn").onclick = async () => { if (confirm("Stop the agent?")) await api(`/api/jobs/${id}/cancel`, { method: "POST" }); };
+
+  let armed = null;
+  $("#cancelBtn").onclick = async () => {
+    const btn = $("#cancelBtn");
+    if (!armed) {
+      btn.textContent = "Click again to stop";
+      armed = setTimeout(() => { btn.textContent = "Stop"; armed = null; }, 4000);
+      return;
+    }
+    clearTimeout(armed); armed = null;
+    btn.disabled = true;
+    await api(`/api/jobs/${id}/cancel`, { method: "POST" }).catch(() => {});
+    btn.disabled = false; btn.textContent = "Stop";
+    poll();
+  };
   $("#fbForm").onsubmit = async e => {
     e.preventDefault();
     $("#fbErr").textContent = "";
     try { await api(`/api/jobs/${id}/feedback`, { method: "POST", body: { text: $("#fbText").value } }); $("#fbText").value = ""; poll(); }
     catch (err) { $("#fbErr").textContent = err.message; }
   };
+  $("#copyBtn").onclick = async () => {
+    const out = st.outputs.find(o => o.name === st.selected);
+    if (!out) return;
+    await navigator.clipboard.writeText(out.caption);
+    $("#copyBtn").textContent = "Copied";
+    setTimeout(() => ($("#copyBtn").textContent = "Copy caption"), 2000);
+  };
+  $("#stage").addEventListener("click", e => {
+    const b = e.target.closest("[data-pick]");
+    if (b) { st.selected = b.dataset.pick; renderOutputs(); }
+  });
 
-  const feed = $("#feed");
+  function addEvent(ev) {
+    if (ev.kind === "status" && ev.text === "Queued") st.stage = 0;
+    if (ev.kind === "feedback") st.stage = 0;
+    if (ev.kind === "status" && ev.text === "Agent started") { st.stage = 1; st.started = ev.t; st.lastSay = st.lastTool = ""; }
+    if (ev.kind === "tool") { st.stage = Math.max(st.stage, ev.stage || 1); st.lastTool = ev.text; }
+    if (ev.kind === "say") st.lastSay = ev.text;
+
+    if (ev.kind === "feedback" || ev.kind === "done" || ev.kind === "error") {
+      const div = document.createElement("div");
+      div.className = `msg ${ev.kind}`;
+      div.textContent = ev.text;
+      if (ev.kind === "done" && ev.seconds) div.insertAdjacentHTML("beforeend", `<span class="when">Finished in ${Math.max(1, Math.round(ev.seconds / 60))} min</span>`);
+      $("#msgs").appendChild(div);
+    } else {
+      const log = $("#log");
+      const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+      const div = document.createElement("div");
+      div.className = ev.kind;
+      div.textContent = ev.text;
+      log.appendChild(div);
+      if (atBottom) log.scrollTop = log.scrollHeight;
+    }
+  }
+
+  function renderBuilding(busy, status) {
+    const box = $("#building");
+    if (busy) {
+      box.hidden = false;
+      $("#scene svg").setAttribute("class", "house " + reached(st.stage));
+      [...$("#steps").children].forEach((li, i) =>
+        li.className = i + 1 < st.stage ? "done" : i + 1 === st.stage ? "now" : "");
+      const tool = st.lastTool.replace(/^(Read|Write|Edit) \S*\//, "$1 ");
+      $("#doing").innerHTML = status === "queued"
+        ? "Waiting for the agent. It starts as soon as the job before this one finishes."
+        : `${esc(st.lastSay.length > 180 ? st.lastSay.slice(0, 177) + "…" : st.lastSay || "Getting started…")}<span class="tool">${esc(tool)}</span>`;
+      const mins = st.started ? Math.floor((Date.now() / 1000 - st.started) / 60) : 0;
+      $("#waitnote").textContent = `${st.started && status === "running" ? `Working for ${mins < 1 ? "under a minute" : mins + " min"}. ` : ""}Most videos take 2 to 5 minutes. You can leave this page; the job keeps going.`;
+    } else if (st.wasBusy && status === "done") {
+      // the job just finished while the customer watched: finish the house, then make way for the video
+      $("#scene svg").setAttribute("class", "house idle " + reached(6));
+      [...$("#steps").children].forEach(li => li.className = "done");
+      $("#doing").textContent = "Done. Your video is ready.";
+      $("#waitnote").textContent = "";
+      setTimeout(() => { box.hidden = true; }, 2600);
+    } else if (st.wasBusy !== false) {
+      box.hidden = true;
+    }
+  }
+
+  function renderOutputs() {
+    const outs = st.outputs;
+    if (!outs.length) {
+      $("#stage").innerHTML = st.job && (st.job.status === "running" || st.job.status === "queued") ? ""
+        : `<div class="empty">${st.job?.status === "done" ? "The agent finished without a video. Its message on the right says why." : "No video was made. See the message on the right, or ask for changes to try again."}</div>`;
+      ["captionSec", "narrSec", "shotsSec"].forEach(s => ($("#" + s).hidden = true));
+      return;
+    }
+    if (!outs.some(o => o.name === st.selected)) st.selected = outs[0].name;
+    const cur = outs.find(o => o.name === st.selected);
+    const d = describeVideo(cur.name);
+    const tall = d.h > d.w;
+    $("#stage").innerHTML = `
+      <div class="player ${tall ? "tall" : "wide"}">
+        <video controls preload="metadata" playsinline src="${cur.url}" ${cur.poster ? `poster="${cur.poster}"` : ""} style="aspect-ratio:${d.w}/${d.h}"></video>
+        <div class="under"><b>${esc(d.label)}</b>
+          <a href="${cur.url}" download="${esc(cur.name)}">Download</a>
+          ${cur.metadata_md ? `<a href="${cur.metadata_md}" target="_blank" rel="noopener">Metadata</a>` : ""}</div>
+      </div>
+      ${outs.length > 1 ? `<div class="thumbs" role="group" aria-label="Other versions">${outs.map(o => { const od = describeVideo(o.name); return `
+        <button type="button" data-pick="${esc(o.name)}" aria-pressed="${o.name === st.selected}">
+          <img src="${o.poster}" alt="" style="aspect-ratio:${od.w}/${od.h}"><span>${esc(od.short || od.label)}</span></button>`; }).join("")}</div>` : ""}`;
+    $("#captionSec").hidden = !cur.caption;
+    $("#caption").textContent = cur.caption || "";
+    $("#narrSec").hidden = !(cur.narration || []).length;
+    $("#narration").innerHTML = (cur.narration || []).map(l => `<li>${esc(l)}</li>`).join("");
+    $("#shotsSec").hidden = !(cur.shots || []).length;
+    $("#shots").innerHTML = `<table><thead><tr><th>Time</th><th>On screen</th><th>Footage</th></tr></thead><tbody>${(cur.shots || []).map(s => `
+      <tr><td>${Math.round(s.start)}–${Math.round(s.end)} s</td><td>${esc(s.text)}</td><td class="files">${esc(s.files.join(", "))}</td></tr>`).join("")}</tbody></table>`;
+  }
+
   async function poll() {
     let j;
-    try { j = await api(`/api/jobs/${id}?since=${since}`); }
-    catch (err) { feed.innerHTML = `<div class="ev error">${esc(err.message)}</div>`; return; }
-    if (since === 0) {
-      $("#jTitle").textContent = j.title;
+    try { j = await api(`/api/jobs/${id}?since=${st.since}`); }
+    catch (err) { $("#stage").innerHTML = `<div class="msg error">${esc(err.message)}</div>`; return; }
+    st.job = j;
+    if (st.since === 0) {
       const r = j.request;
-      $("#jChips").innerHTML = [...r.kinds.map(k => KIND[k]), ...r.lengths.map(l => l + " s"), ...r.aspects,
-        { elevenlabs: "ElevenLabs", edge: "Free voice", say: "Mac voice" }[r.voice] || r.voice,
-        ...(r.highlight ? [`“${r.highlight}”`] : []),
-        ...(r.music && r.music !== "auto" ? [r.music === "none" ? "No music" : trackName(r.music)] : [])].map(c => `<span class="chip">${esc(c)}</span>`).join("");
+      $("#jTitle").textContent = jobName(j);
+      document.title = `${jobName(j)}: Home Video Studio`;
+      $("#jWhat").textContent = `${j.home ? j.home + ", c" : "C"}reated ${created(j.created)}. ${list(r.lengths.map(l => l + " s"))}, ${list(r.aspects.map(a => ASPECT[a] || a))}, ${VOICE[r.voice] || r.voice}`
+        + (r.highlight ? `. Highlight: “${r.highlight}”` : "")
+        + (r.music && r.music !== "auto" ? `. Music: ${r.music === "none" ? "none" : trackName(r.music)}` : "");
     }
-    const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
-    for (const ev of j.events) {
-      const div = document.createElement("div");
-      div.className = `ev ${ev.kind}`;
-      div.textContent = ev.kind === "done" ? `✓ ${ev.text}${ev.seconds ? `  (${Math.round(ev.seconds / 60)} min)` : ""}` : ev.text;
-      feed.appendChild(div);
-    }
-    since = j.next;
-    if (atBottom || j.events.length && since === j.events.length) feed.scrollTop = feed.scrollHeight;
+    j.events.forEach(addEvent);
+    st.since = j.next;
 
     const busy = j.status === "running" || j.status === "queued";
-    $("#jStatus").className = `pill ${j.status}`;
+    $("#jStatus").className = `status ${j.status}`;
     $("#jStatus").textContent = STATUS[j.status] || j.status;
-    const usage = [];
-    if (j.cost) usage.push(`<span title="Model usage reported by Claude Code for every agent run on this job. With a Claude subscription it's an estimate at API rates that counts toward your plan's limits; with an API key it's roughly what's billed.">Claude agent est. <b>$${j.cost.toFixed(2)}</b></span>`);
-    if (j.elevenlabs_characters) usage.push(`<span title="Narration characters sent to ElevenLabs, charged against your ElevenLabs plan's credits. Re-renders that reuse the same lines don't count again.">ElevenLabs <b>${j.elevenlabs_characters.toLocaleString()}</b> characters</span>`);
-    $("#jUsage").innerHTML = usage.join(" · ");
     $("#cancelBtn").hidden = !busy;
     $("#fbBtn").disabled = busy;
-    $("#fbText").placeholder = busy ? "You can send changes once this run finishes." : "Ask for changes, e.g. 'shorter titles' or 'use more of the snowy street shots'";
+    $("#fbText").placeholder = busy ? "You can ask for changes once this run finishes."
+      : "Ask for changes, e.g. “shorter titles”";
+    renderBuilding(busy, j.status);
+    st.wasBusy = busy;
 
-    const key = j.outputs.map(o => o.url).join("|");
-    if (key !== outputsKey) {
-      outputsKey = key;
-      const shape = name => { const m = name.match(/(\d+)x(\d+)\.mp4$/); return m ? [+m[1], +m[2]] : [16, 9]; };
-      const tall = o => { const [w, h] = shape(o.name); return h > w ? 1 : 0; };
-      const ordered = [...j.outputs].sort((a, b) => tall(a) - tall(b) || a.name.localeCompare(b.name));
-      $("#videos").innerHTML = ordered.map(o => { const [w, h] = shape(o.name); return `
-        <div class="video ${h > w ? "tall" : ""}" style="--ar: ${w} / ${h}">
-          <video controls preload="metadata" playsinline src="${o.url}"></video>
-          <div class="cap"><span>${esc(o.name)}</span><span class="links">${o.metadata_md ? `<a href="${o.metadata_md}" target="_blank" rel="noopener">Metadata</a>` : ""}<a href="${o.url}" download="${esc(o.name)}">Download</a></span></div>
-        </div>`; }).join("");
-      $("#noVideos").hidden = j.outputs.length > 0;
+    const usage = [];
+    if (j.cost) usage.push(`<p><b>Claude agent: about $${j.cost.toFixed(2)}</b><br><span class="hint">Model usage reported by Claude Code for every agent run on this job. With a Claude subscription it's an estimate at API rates that counts toward your plan's limits; with an API key it's roughly what's billed.</span></p>`);
+    if (j.elevenlabs_characters) usage.push(`<p><b>ElevenLabs: ${j.elevenlabs_characters.toLocaleString()} characters</b><br><span class="hint">Narration characters charged against your ElevenLabs plan's credits. Re-renders that reuse the same lines don't count again.</span></p>`);
+    $("#usageSec").hidden = !usage.length;
+    $("#usage").innerHTML = usage.join("");
+
+    const key = j.outputs.map(o => o.url + (o.caption || "")).join("|") + j.status;
+    if (key !== st.outputsKey) {
+      st.outputsKey = key;
+      st.outputs = j.outputs;
+      renderOutputs();
     }
-    if (j.summary !== summaryText) {
-      summaryText = j.summary;
-      $("#summaryCard").hidden = !j.summary;
-      $("#summary").innerHTML = markdown(j.summary);
+    if (j.summary !== st.summary) {
+      st.summary = j.summary;
+      $("#notesSec").hidden = !j.summary;
+      $("#notes").innerHTML = markdown(j.summary);
     }
-    lastStatus = j.status;
     clearTimeout(timer);
     timer = setTimeout(poll, busy ? 1500 : 6000);
   }
@@ -605,7 +966,7 @@ async function openSettings() {
   $("#settingsErr").textContent = "";
   $("#removeKey").hidden = !settingsState.elevenlabs_configured;
   $("#elStatus").innerHTML = settingsState.elevenlabs_configured
-    ? `<span class="ok-text">● Key saved.</span> Paste a new one to replace it.` : "No key saved yet.";
+    ? `<span class="ok-text">Key saved.</span> Paste a new one to replace it.` : "No key saved yet.";
   $("#voicePick").hidden = true;
   if (settingsState.elevenlabs_configured) await loadVoices();
   settings.showModal();
@@ -613,14 +974,18 @@ async function openSettings() {
 
 async function loadVoices() {
   try {
-    const voices = await api("/api/voices");
+    const { voices, note } = await api("/api/voices");
     const sel = $("#elVoice");
     sel.innerHTML = voices.map(v => `<option value="${esc(v.id)}" data-preview="${esc(v.preview || "")}" data-name="${esc(v.name)}"
-      ${v.id === settingsState.elevenlabs_voice_id ? "selected" : ""}>${esc(v.name)}${v.labels ? " — " + esc(v.labels) : ""}</option>`).join("");
+      ${v.id === settingsState.elevenlabs_voice_id ? "selected" : ""}>${esc(v.name)}${v.labels ? ", " + esc(v.labels) : ""}</option>`).join("");
     $("#voicePick").hidden = !voices.length;
+    $("#voiceNote").textContent = note;
+    showSample();
   } catch (err) { $("#settingsErr").textContent = err.message; }
 }
 
+const showSample = () => { $("#previewBtn").hidden = !$("#elVoice").selectedOptions[0]?.dataset.preview; };
+$("#elVoice").onchange = showSample;
 $("#settingsBtn").onclick = openSettings;
 $("#previewBtn").onclick = () => {
   const opt = $("#elVoice").selectedOptions[0];
@@ -643,7 +1008,7 @@ $("#saveSettings").onclick = async () => {
     await loadSettings();
     if (body.elevenlabs_api_key && !body.elevenlabs_voice_id) {
       $("#elKey").value = "";
-      $("#elStatus").innerHTML = `<span class="ok-text">● Key works and is saved.</span> Now pick a voice.`;
+      $("#elStatus").innerHTML = `<span class="ok-text">Key works and is saved.</span> Now pick a voice.`;
       $("#removeKey").hidden = false;
       await loadVoices();
     } else { settings.close(); route(); }
@@ -658,6 +1023,7 @@ function route() {
   if (activeMic) activeMic.stop();
   const m = location.hash.match(/^#\/job\/(.+)$/);
   m ? jobView(m[1]) : homeView();
+  window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);
 Promise.all([loadSettings(), api("/api/templates").then(t => { TEMPLATES = t; }).catch(() => {}),

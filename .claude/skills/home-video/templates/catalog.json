@@ -5,13 +5,14 @@
     "goal": "Prove the craft: a fast taste of the construction, then a long, luxurious payoff of the finished home.",
     "media": "Process: 3-5 construction shots (framing walk-throughs through stud walls, the sheathed shell, ideally the builder's site sign). Final: hero interiors, close-up details (faucets, range, stone, light fixtures), then exterior architecture and outdoor living.",
     "story": [
-      "Brand hook (first beat or two): the site with the builder's sign, or the earliest construction shot, with the highlight message (or builder name) as the only title.",
+      "Brand hook (first beat or two): the site with the builder's sign, or the earliest construction shot, with the highlight message as the title; the voice says it too.",
       "Process act, about 15% of the video: 3-5 construction shots of 1-1.5 s, ideally slow walks through the framing with a centred vanishing point.",
-      "Hard switch to the finished home, about 70%: alternate close-up details (gold faucet, range knobs, marble, light fixture) with wide rooms, one shot every 2 beats.",
-      "Finale, about 15%: exterior architecture and outdoor living, held longer (2-3 s) as the music resolves; the highlight message and 'Comment BUILD' on the last shot.",
-      "Hard cuts only, no cross-fades. No step labels, no captions, and no voiceover unless the user asks for one."
+      "Hard switch to the finished home, about 70%: alternate close-up details (faucet, range, stone, light fixture) with wide rooms, one shot every 2 beats.",
+      "Finale: exterior architecture and outdoor living, held 2-3 s as the music resolves.",
+      "Hard cuts only, no cross-fades, no step labels.",
+      "Ending: the last shot is real footage (never a colour card) with the slogan, the website and the call to action ({slogan} / {website} / {cta}: \"DM us, link in bio\", from templates/brand.json), and the closing voice line '{slogan}. Find us at {website_spoken}.'"
     ],
-    "voice": "None: the music carries it (the reference has no narration). Only add one short line if the user asks.",
+    "voice": "Sparse voiceover over the music (it ducks under the voice): one short line every 3-4 shots, about 2 words per second, saying what the viewer sees and why it matters. Subtitles on.",
     "pace": "Cut every 2 beats on the music (about 1.5 s at 80 bpm); slow push-ins on every photo; last two shots held 2-3 s.",
     "music": "Warm, cinematic or acoustic track around 70-95 bpm that builds (quiet under the construction, lifting into the finished home)",
     "reference": "data/others_video_reference/both_process_and_final.mp4",
@@ -26,13 +27,14 @@
     "goal": "Make people stop scrolling: energy and atmosphere of the finished home, not information.",
     "media": "Hero and good photos and clips of the finished home in warm natural light: living spaces, kitchen, styled details (vases, books, bedding), outdoor living. Same-angle pairs (before/after styling, day/evening) are gold.",
     "story": [
-      "Flash teaser (first ~1.2 s): 5 hard cuts of about 0.25 s each, using the best shots that appear later. This is the one place a shot may repeat.",
+      "Flash teaser (first ~1.2 s): 5 hard cuts of about 0.25 s each, using the best shots that appear later. This is the one place a shot may repeat. No voice yet.",
+      "First main shot: the highlight message as the title, spoken by the voice.",
       "Main run: a quick cut roughly every second (1.5-2 beats), wide rooms mixed with medium shots, kitchen and living first.",
       "Revisit one or two hero angles later in the reel (same framing, different light or styling) to show transformation.",
-      "Wind down: a close-up styled detail, then the calmest wide room held 2-3 s as the ending.",
-      "Text: only the highlight message (over the first main shot and the final hold) plus 'Comment BUILD'. No step labels, no captions, no voiceover."
+      "Wind-down: a close-up styled detail, then the calmest wide room held 2-3 s.",
+      "Ending: the last shot is real footage (never a colour card) with the slogan, the website and the call to action ({slogan} / {website} / {cta}: \"DM us, link in bio\", from templates/brand.json), and the closing voice line '{slogan}. Find us at {website_spoken}.'"
     ],
-    "voice": "None: music only, like the reference.",
+    "voice": "Very sparse: 3-5 short lines that set a mood (light, warmth, calm), never a list of features. Music stays up front and ducks under the voice. Subtitles on.",
     "pace": "Very fast and rhythmic: flash teaser at 1/2 beat per shot, then 1.5-2 beats per shot; nearly static camera (tiny push-ins), hard cuts.",
     "music": "Upbeat pop / house / funk track around 95-140 bpm (around 130 bpm puts 2-beat cuts near the reference's 0.85 s)",
     "reference": "data/others_video_reference/vibe.mp4",
@@ -50,8 +52,8 @@
       "Hook (0-3s): earliest aerial (bare lot / top-down) with the title 'This was dirt.'",
       "Then aerial clips in date order, one stage per shot, matching angle where possible (top-down to top-down, orbit to orbit).",
       "Kicker on stage shots: the stage name or the date/month ('Month 3').",
-      "Reveal: the finished aerial (or best finished exterior) with the title 'This is the finish.'",
-      "End card: highlight message plus 'Comment BUILD'."
+      "Reveal: the finished aerial (or best finished exterior) with the title 'This is the finish.' or the highlight message.",
+      "Ending: the last shot is real footage (never a colour card) with the slogan, the website and the call to action ({slogan} / {website} / {cta}: \"DM us, link in bio\", from templates/brand.json), and the closing voice line '{slogan}. Find us at {website_spoken}.'"
     ],
     "voice": "Few lines, big claims only if the user gave them (on time, on budget). About 2 words per second.",
     "pace": "Keep drone clips moving: real clips over stills, 2-3s each, use speed 1.5-2 for slow orbits.",
@@ -68,9 +70,10 @@
     "story": [
       "Hook (0-3s): exterior or aerial with a stat title: location and specs, or the highlight message.",
       "Then the tour in walking order: approach -> entry -> living -> kitchen -> stairs -> primary suite -> other bedrooms / baths -> lower level / outdoor.",
-      "Best room or view LAST.",
+      "Best room or view as the last room of the tour.",
       "Kicker on every room shot: the room name; title says what is special about it (2-5 words).",
-      "End card: highlight message or home name, plus 'Comment BUILD to book a tour'."
+      "Finish outside: step back out to the exterior for the last shot.",
+      "Ending: the last shot is real footage (never a colour card) with the slogan, the website and the call to action ({slogan} / {website} / {cta}: \"DM us, link in bio\", from templates/brand.json), and the closing voice line '{slogan}. Find us at {website_spoken}.'"
     ],
     "voice": "A guided story in second person ('step inside...'), one line per room or two, about 2.3 words per second.",
     "pace": "Steady, 2-3s per shot, moves that follow the walking direction.",

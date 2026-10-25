@@ -19,7 +19,10 @@
       "duration": 3.0,
       "layout": "center",
       "title": "This was dirt.",
-      "narration": "This was dirt."
+      "narration": [
+        "This was dirt.",
+        "It started here."
+      ]
     },
     {
       "source": "media/drone/02-foundation.mp4",
@@ -40,7 +43,7 @@
     },
     {
       "source": "media/drone/05-finished.mp4",
-      "duration": 3.0,
+      "duration": 2.5,
       "layout": "center",
       "title": [
         "{highlight}",
@@ -49,19 +52,17 @@
       "narration": "This is the finish."
     },
     {
-      "source": "card",
-      "duration": 3.0,
+      "source": "media/drone/06-finished-orbit.mp4",
+      "duration": 3.5,
+      "kicker": "{slogan}",
+      "title": "{website}",
       "layout": "center",
-      "title": [
-        "{highlight}",
-        "{home_name}",
-        "Built with care"
+      "narration": [
+        "{slogan}. Find us at {website_spoken}.",
+        "{slogan}."
       ],
-      "subtitle": [
-        "{builder}",
-        "{location}"
-      ],
-      "kicker": "Comment BUILD"
+      "subtitle": "{cta}"
     }
-  ]
+  ],
+  "captions": true
 }

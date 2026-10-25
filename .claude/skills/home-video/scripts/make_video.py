@@ -91,6 +91,18 @@ def fill_text(value, info: dict) -> str | None:
     return None
 
 
+BRAND_FILE = Path(__file__).resolve().parent.parent / "templates" / "brand.json"
+
+
+def storyboard_info(sb: dict) -> dict:
+    """The storyboard's info fields on top of the brand defaults ({website}, {website_spoken}, {slogan})."""
+    try:
+        brand = json.loads(BRAND_FILE.read_text())
+    except (OSError, ValueError):
+        brand = {}
+    return {**brand, **{k: v for k, v in sb.get("info", {}).items() if v}}
+
+
 def apply_info(shots: list[dict], info: dict) -> None:
     for shot in shots:
         for key in TEXT_FIELDS:
@@ -653,7 +665,10 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
     total = float(sb["duration"])
     T = float(style["transition_duration"])
     shots = sb["shots"]
-    apply_info(shots, sb.get("info", {}))
+    apply_info(shots, storyboard_info(sb))
+    if shots and shots[-1].get("source") in (None, "card"):
+        raise ValueError("The video ends on a solid colour card. End on footage instead: put the closing text "
+                         "(e.g. {website} and {slogan}) on the last real shot.")
     for shot in shots:  # a storyboard-wide photo framing default, e.g. "cover" for full-bleed reels
         if style.get("fit"):
             shot.setdefault("fit", style["fit"])

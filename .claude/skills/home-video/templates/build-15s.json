@@ -15,10 +15,10 @@
   "music": null,
   "_music": "Warm cinematic / acoustic-pop, 75-95 bpm, clear beat (see catalog.json)",
   "beat_sync": true,
-  "captions": false,
+  "captions": true,
   "style": {
     "transition": "cut",
-    "music_volume": 0.9,
+    "music_volume": 0.45,
     "fit": "cover"
   },
   "shots": [
@@ -31,7 +31,11 @@
         "{highlight}",
         "{builder}"
       ],
-      "layout": "center"
+      "layout": "center",
+      "narration": [
+        "{highlight}.",
+        "Here's how we built this one."
+      ]
     },
     {
       "source": "media/process/framing-walk-1.mp4",
@@ -43,7 +47,8 @@
       "source": "media/process/framing-walk-2.mp4",
       "beats": 2,
       "duration": 1.4,
-      "motion": "zoom_in"
+      "motion": "zoom_in",
+      "narration": "It starts with a solid frame."
     },
     {
       "source": "media/final/detail-faucet.jpg",
@@ -57,7 +62,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "zoom_in",
-      "motion_amount": 0.08
+      "motion_amount": 0.08,
+      "narration": "Then every detail comes together."
     },
     {
       "source": "media/final/detail-stone.jpg",
@@ -71,7 +77,8 @@
       "beats": 2,
       "duration": 1.4,
       "motion": "zoom_in",
-      "motion_amount": 0.08
+      "motion_amount": 0.08,
+      "narration": "Room by room, built to last."
     },
     {
       "source": "media/final/bath-detail.jpg",
@@ -84,20 +91,21 @@
       "source": "media/final/exterior.jpg",
       "duration": 2.4,
       "motion": "zoom_out",
-      "motion_amount": 0.06
+      "motion_amount": 0.06,
+      "narration": [
+        "{slogan}. Find us at {website_spoken}.",
+        "{slogan}."
+      ]
     },
     {
       "source": "media/final/outdoor-living.jpg",
       "duration": 2.6,
       "motion": "zoom_in",
       "motion_amount": 0.06,
-      "title": [
-        "{highlight}",
-        "{home_name}",
-        "Built with care"
-      ],
-      "subtitle": "Comment BUILD",
-      "layout": "center"
+      "layout": "center",
+      "kicker": "{slogan}",
+      "title": "{website}",
+      "subtitle": "{cta}"
     }
   ]
 }

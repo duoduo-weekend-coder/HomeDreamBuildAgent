@@ -69,6 +69,8 @@ lock = threading.Lock()
 
 ENV_FILE = ROOT / ".env"
 ELEVEN_API = "https://api.elevenlabs.io/v1"
+# The studio's default narrator. Always offered in Voice settings, even if the key can't list the account's voices.
+DEFAULT_VOICE = {"id": "a0L48LDiuC3RCS8LXA36", "name": "Olena", "category": "default", "labels": "studio default", "preview": None}
 
 
 def read_env_file() -> dict:
@@ -137,6 +139,59 @@ def agent_env() -> dict:
     return env
 
 
+def read_metadata(path: Path) -> dict:
+    """Caption, narration lines and shot list from a video's metadata file, for the page to show as text."""
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+    files = {a.get("id"): a.get("fileName", "") for a in data.get("rawAssets", [])}
+    segments = data.get("segments", [])
+    return {
+        "caption": data.get("caption") or "",
+        "duration": data.get("durationSeconds"),
+        "narration": [s["transcript"] for s in segments if s.get("transcript")],
+        "shots": [{"start": s.get("startSeconds"), "end": s.get("endSeconds"), "text": s.get("description", ""),
+                   "files": [files.get(i, i) for i in s.get("rawAssetIds", [])]} for s in segments],
+    }
+
+
+def make_poster(video: Path) -> Path | None:
+    """A still from one second in, cached next to the video, used as the player poster and job thumbnail."""
+    poster = video.parent / ".posters" / f"{video.stem}.jpg"
+    if poster.exists() and poster.stat().st_mtime >= video.stat().st_mtime:
+        return poster
+    ffmpeg = shutil.which("ffmpeg", path=agent_env()["PATH"])
+    if not ffmpeg:
+        return None
+    poster.parent.mkdir(exist_ok=True)
+    tmp = poster.with_name(f".{video.stem}.{uuid.uuid4().hex[:6]}.jpg")
+    for at in ("1", "0"):  # very short or still-rendering files may not reach one second
+        subprocess.run([ffmpeg, "-v", "error", "-y", "-ss", at, "-i", str(video), "-frames:v", "1",
+                        "-vf", "scale=540:-2", "-q:v", "4", str(tmp)], capture_output=True, timeout=30)
+        if tmp.exists() and tmp.stat().st_size:
+            tmp.replace(poster)
+            return poster
+    tmp.unlink(missing_ok=True)
+    return None
+
+
+def tool_stage(name: str, inp: dict, rendered: bool) -> int:
+    """Which step of the job a tool call belongs to, for the progress shown while the customer waits:
+    1 reading footage, 2 choosing shots, 3 writing the storyboard, 4 rendering, 5 checking.
+    Frames saved to checks/ before the first render are of source clips, so they count as choosing shots."""
+    target = inp.get("command", "") if name == "Bash" else inp.get("file_path", "")
+    if "summary.md" in target or ".metadata." in target or (rendered and "/checks/" in target):
+        return 5
+    if "make_video.py" in target:
+        return 4
+    if "/storyboards/" in target:
+        return 3
+    if "/checks/" in target or "--only" in target or "/thumbs/" in target or (name in ("Write", "Edit") and "shots.md" in target):
+        return 2
+    return 1
+
+
 class Job:
     def __init__(self, job_id: str, request: dict):
         self.id = job_id
@@ -167,12 +222,14 @@ class Job:
             return []
         items = []
         for p in sorted(out.glob("*.mp4")):
-            item = {"name": p.name, "url": f"/files/jobs/{self.id}/output/{p.name}?v={int(p.stat().st_mtime)}",
-                    "size": p.stat().st_size}
+            version = int(p.stat().st_mtime)
+            item = {"name": p.name, "url": f"/files/jobs/{self.id}/output/{p.name}?v={version}",
+                    "poster": f"/api/poster/{self.id}/{p.name}?v={version}", "size": p.stat().st_size}
             for key, suffix in (("metadata_md", ".metadata.md"), ("metadata_json", ".metadata.json")):
                 meta = p.with_name(p.stem + suffix)
                 if meta.exists():
                     item[key] = f"/files/jobs/{self.id}/output/{meta.name}?v={int(meta.stat().st_mtime)}"
+            item.update(read_metadata(p.with_name(p.stem + ".metadata.json")))
             items.append(item)
         return items
 
@@ -282,8 +339,13 @@ jobs/{job.id}/storyboards/, and keep its story order, pacing and text style:
 {template_text}
 
 Write storyboards to jobs/{job.id}/storyboards/ and render each with -o set to the path above.
-Give every storyboard a "caption": a short Instagram caption (1-2 sentences plus 3-5 hashtags) that only states what
-the footage shows. Rendering also writes <video>.metadata.json and <video>.metadata.md (the acquisition-agent
+Every video gets a voiceover and subtitles: keep "captions": true and write each shot's "narration" for the footage
+actually on screen (the template lines are placeholders; keep about the same length so it fits). Never end on a colour
+"card": the last shot is real footage carrying the template's closing text ({{slogan}} above {{website}}, with {{cta}} "DM us, link in bio" beneath) and the closing
+line "{{slogan}}. Find us at {{website_spoken}}." (brand values come from templates/brand.json; leave the placeholders in).
+Give every storyboard a "caption", the post description: 2-3 sentences on what the video shows (only true things),
+then the slogan and the website on their own line, then 3-5 hashtags. Put each video's narration script and
+description in the summary. Rendering also writes <video>.metadata.json and <video>.metadata.md (the acquisition-agent
 metadata contract) next to each video; check they exist.
 
 Home details for the storyboard `info` block (use only these, never invent any):
@@ -351,7 +413,7 @@ def run_agent(job: Job, prompt: str) -> None:
         job.save()
         return
 
-    final = None
+    final, rendered = None, False
     for line in job.proc.stdout:
         line = line.strip()
         if not line:
@@ -370,7 +432,9 @@ def run_agent(job: Job, prompt: str) -> None:
                 if c.get("type") == "text" and c["text"].strip():
                     job.add("say", c["text"].strip())
                 elif c.get("type") == "tool_use":
-                    job.add("tool", describe_tool(c["name"], c.get("input", {})), tool=c["name"])
+                    stage = tool_stage(c["name"], c.get("input", {}), rendered)
+                    rendered = rendered or stage == 4
+                    job.add("tool", describe_tool(c["name"], c.get("input", {})), tool=c["name"], stage=stage)
         elif kind == "user":
             content = e.get("message", {}).get("content", [])
             for c in content if isinstance(content, list) else []:
@@ -441,17 +505,44 @@ def highlight_rule(highlight: str) -> str:
     if not highlight:
         return "No highlight message was given: leave info.highlight empty."
     return f"""Highlight message from the user (MUST appear in every video): "{highlight}"
-- Put it in info.highlight exactly as written; the templates show it as the hook title and on the end card.
-- If the template has narration, weave its meaning into it too, without adding claims the user didn't make.
+- Put it in info.highlight exactly as written; the templates show it as the opening title and speak it in the
+  first narration line. Keep both, and don't add claims the user didn't make.
 - After rendering, check a frame shows the message in full (not cut off) and mention that in the summary."""
+
+
+def job_title(request: dict) -> str:
+    """The home name, else its location, else the footage folder's name."""
+    info = request.get("info", {})
+    if info.get("home_name") or info.get("location"):
+        return info.get("home_name") or info["location"]
+    source = request.get("source", "").strip()
+    if drive_folder_id(source):
+        return "Drive footage"
+    name = re.sub(r"[_-]+", " ", Path(source).expanduser().name).strip()
+    return name[:1].upper() + name[1:] if name else "Untitled home"
+
+
+def job_stage(job: Job) -> int:
+    """How far the current run has got (see tool_stage), for the house drawn on a running job's tile."""
+    stage = 0
+    for e in job.events:
+        if e["kind"] == "feedback" or (e["kind"] == "status" and e["text"] == "Queued"):
+            stage = 0
+        elif e["kind"] == "status" and e["text"] == "Agent started":
+            stage = 1
+        elif e["kind"] == "tool":
+            stage = max(stage, e.get("stage", 1))
+    return stage
 
 
 def job_summary(job: Job) -> dict:
     r = job.request
+    outputs = job.outputs()
     return {"id": job.id, "status": job.status, "created": job.created, "cost": round(job.cost, 2),
             "elevenlabs_characters": job.voice_characters().get("elevenlabs", 0),
-            "title": r.get("info", {}).get("home_name") or "Untitled home",
-            "kinds": r["kinds"], "lengths": r["lengths"], "aspects": r["aspects"], "videos": len(job.outputs())}
+            "title": job_title(r), "home": r.get("info", {}).get("home_name") or r.get("info", {}).get("location") or "",
+            "kinds": r["kinds"], "lengths": r["lengths"], "aspects": r["aspects"],
+            "videos": len(outputs), "poster": outputs[0]["poster"] if outputs else None, "stage": job_stage(job)}
 
 
 def validate(body: dict) -> dict:
@@ -509,6 +600,18 @@ class Handler(BaseHTTPRequestHandler):
                 events = job.events[since:]
             return self.send_json({**job_summary(job), "request": job.request, "events": events, "next": since + len(events),
                                    "outputs": job.outputs(), "summary": job.summary()})
+        if parts[:2] == ["api", "poster"] and len(parts) == 4:
+            job = jobs.get(parts[2])
+            video = job.dir / "output" / Path(unquote(parts[3])).name if job else None
+            poster = make_poster(video) if video and video.suffix == ".mp4" and video.is_file() else None
+            if not poster:
+                return self.send_json({"error": "No poster"}, 404)
+            return self.send_file(poster, cache=True)  # the URL changes whenever the video does
+        if parts[:1] == ["assets"] and len(parts) == 2:
+            target = APP / "assets" / Path(unquote(parts[1])).name
+            if not target.is_file():
+                return self.send_json({"error": "Not found"}, 404)
+            return self.send_file(target, cache=True)
         if parts == ["api", "templates"]:
             return self.send_json(TEMPLATES)
         if parts == ["api", "music"]:
@@ -521,20 +624,24 @@ class Handler(BaseHTTPRequestHandler):
         if parts == ["api", "settings"]:
             env = read_env_file()
             return self.send_json({"elevenlabs_configured": bool(env.get("ELEVENLABS_API_KEY")),
-                                   "elevenlabs_voice_id": env.get("ELEVENLABS_VOICE_ID", ""),
-                                   "elevenlabs_voice_name": env.get("ELEVENLABS_VOICE_NAME", "")})
+                                   "elevenlabs_voice_id": env.get("ELEVENLABS_VOICE_ID") or DEFAULT_VOICE["id"],
+                                   "elevenlabs_voice_name": env.get("ELEVENLABS_VOICE_NAME")
+                                   or ("" if env.get("ELEVENLABS_VOICE_ID") else DEFAULT_VOICE["name"])})
         if parts == ["api", "voices"]:
             key = read_env_file().get("ELEVENLABS_API_KEY")
             if not key:
                 return self.send_json({"error": "Add your ElevenLabs API key first."}, 400)
             try:
-                data = eleven_get("/voices", key)
+                data, note = eleven_get("/voices", key), ""
             except (ValueError, OSError) as e:
-                return self.send_json({"error": str(e)}, 502)
+                data, note = {}, f"Only the default voice is listed. {e}"
             voices = [{"id": v["voice_id"], "name": v["name"], "category": v.get("category", ""),
                        "labels": ", ".join(str(x) for x in (v.get("labels") or {}).values()), "preview": v.get("preview_url")}
                       for v in data.get("voices", [])]
-            return self.send_json(sorted(voices, key=lambda v: (v["category"] != "cloned", v["name"])))
+            voices = sorted(voices, key=lambda v: (v["category"] != "cloned", v["name"]))
+            ours = next((v for v in voices if v["id"] == DEFAULT_VOICE["id"]), None)
+            voices = [{**DEFAULT_VOICE, "preview": ours and ours["preview"]}] + [v for v in voices if v is not ours]
+            return self.send_json({"voices": voices, "note": note})
         if parts and parts[0] == "files":
             target = (ROOT / unquote("/".join(parts[1:]))).resolve()
             if JOBS.resolve() not in target.parents or not target.is_file():
@@ -615,7 +722,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(job_summary(job))
         self.send_json({"error": "Not found"}, 404)
 
-    def send_file(self, path: Path) -> None:
+    def send_file(self, path: Path, cache: bool = False) -> None:
         """Serve a file, honouring Range requests (Safari needs them to play video)."""
         size = path.stat().st_size
         ctype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
@@ -637,7 +744,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Accept-Ranges", "bytes")
         self.send_header("Content-Length", str(end - start + 1))
-        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Cache-Control", "max-age=604800" if cache else "no-cache")
         self.end_headers()
         with open(path, "rb") as f:
             f.seek(start)

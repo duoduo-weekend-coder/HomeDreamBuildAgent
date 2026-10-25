@@ -42,7 +42,8 @@
     {
       "source": "media/drone/05-sheathed.mp4",
       "duration": 3.0,
-      "kicker": "Sheathing"
+      "kicker": "Sheathing",
+      "narration": "wrapped it,"
     },
     {
       "source": "media/drone/06-roof.mp4",
@@ -53,7 +54,11 @@
     {
       "source": "media/drone/07-exterior.mp4",
       "duration": 3.0,
-      "kicker": "Exterior"
+      "kicker": "Exterior",
+      "narration": [
+        "{highlight}.",
+        "Month by month, it took shape."
+      ]
     },
     {
       "source": "media/drone/08-finished.mp4",
@@ -69,20 +74,17 @@
       "narration": "This is the finish."
     },
     {
-      "source": "card",
+      "source": "media/drone/09-finished-orbit.mp4",
       "duration": 4.0,
+      "kicker": "{slogan}",
+      "title": "{website}",
       "layout": "center",
-      "title": [
-        "{highlight}",
-        "{home_name}",
-        "Built with care"
+      "narration": [
+        "{slogan}. Find us at {website_spoken}.",
+        "{slogan}."
       ],
-      "subtitle": [
-        "{builder}",
-        "{location}"
-      ],
-      "kicker": "Comment BUILD",
-      "narration": "Comment BUILD to see how."
+      "subtitle": "{cta}"
     }
-  ]
+  ],
+  "captions": true
 }

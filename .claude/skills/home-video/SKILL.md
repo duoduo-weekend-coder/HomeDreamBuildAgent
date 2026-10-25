@@ -14,7 +14,14 @@ Turns a folder of photos and clips into a finished 15s or 30s video using one of
 | **3. Drone + process** (`drone`) | "This was dirt." on the earliest aerial, then drone clips in date order, then "This is the finish." | `drone-15s.json`, `drone-30s.json` |
 | **4. Walk-through with narrative** (`walkthrough`) | Narrated tour in walking order (exterior → entry → living → kitchen → suite → …), best room last | `walkthrough-15s.json`, `walkthrough-30s.json` |
 
-Templates 1 and 2 copy the reference reels described in `docs/reference-styles.md`: hard cuts on the beat, full-frame photos, music only, and `music` must be set (pick a track in `assets/music/`). Every template ends with `Comment BUILD`. **Highlight message:** when the user gives one, put it in `info.highlight` exactly as written. The templates show it as the hook title and on the end card (long text wraps automatically); also work it into the narration. `overview-*.json` is the older room-tour storyboard, kept for reference.
+Templates 1 and 2 copy the reference reels described in `docs/reference-styles.md`: hard cuts on the beat, full-frame photos, and `music` must be set (pick a track in `assets/music/`).
+
+**Every video has:**
+- **A voiceover and subtitles.** Write each shot's `narration` for what is actually on screen (the template lines are placeholders of about the right length); keep `"captions": true`.
+- **A brand ending on real footage, never a colour card** (the renderer refuses a storyboard whose last shot is a `card`). The last shot carries `{slogan}` above `{website}` with `{cta}` ("DM us, link in bio") beneath, and the closing line `{slogan}. Find us at {website_spoken}.` The values come from `templates/brand.json` (triplezbuild.com, "Budget, quality, on time").
+- **A description** in `caption`: 2-3 true sentences about the video, then the slogan and website, then 3-5 hashtags.
+
+**Highlight message:** when the user gives one, put it in `info.highlight` exactly as written. The templates show it as the opening title (long text wraps automatically) and speak it in the first narration line. `overview-*.json` is the older room-tour storyboard, kept for reference.
 
 `scripts/make_video.py` renders a storyboard JSON into an MP4 that is exactly the storyboard's `duration`.
 
@@ -39,7 +46,7 @@ Templates 1 and 2 copy the reference reels described in `docs/reference-styles.m
 
    For build videos, the shoot dates *are* the construction order; say which stage each day shows.
 4. **Copy the matching template** to `storyboards/<kind>-<length>.json` and fill it in:
-   - Point each `source` at the best shot for that slot. For clips, set `start` to the strongest moment (from the contact-sheet timestamps). Drop slots with no good media and give their time to neighbours; keep the end card.
+   - Point each `source` at the best shot for that slot. For clips, set `start` to the strongest moment (from the contact-sheet timestamps). Drop slots with no good media and give their time to neighbours; keep the closing shot with the brand text.
    - Use one shot per scene (its representative), and never a weak or exclude shot. Put hero shots in the hook and the last slot. Fix a privacy problem with `"crop": [l, t, r, b]` or `"blur": [[l, t, r, b], ...]` (fractions of the original photo) if that still leaves a good shot; otherwise drop the shot.
    - Rewrite titles to match what's actually in each shot.
    - Fill `info` (`home_name`, `location`, `specs`, `builder`, `highlight`) from what the user said, the notes or the folder names. **All of these are optional.** Leave a field empty if it isn't known, and never invent one. Text fields can be a list of fallbacks: `["Welcome to {home_name}.", "Welcome home."]` uses the first option whose `{fields}` are all known, and a field whose options are all unknown is simply left out.

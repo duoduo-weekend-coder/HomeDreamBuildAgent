@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from make_video import (  # noqa: E402
-    DEFAULT_STYLE, IMAGE_EXTS, apply_info, find_file, media_duration, timeline,
+    DEFAULT_STYLE, IMAGE_EXTS, apply_info, find_file, media_duration, storyboard_info, timeline,
 )
 
 SCHEMA_VERSION = 1
@@ -56,7 +56,7 @@ def describe_shot(shot: dict) -> str:
 def build(storyboard_path: Path, output: Path, aspect: str | None = None) -> dict:
     sb = json.loads(storyboard_path.read_text())
     shots = sb["shots"]
-    info = sb.get("info", {})
+    info = storyboard_info(sb)
     apply_info(shots, info)
     style = {**DEFAULT_STYLE, **sb.get("style", {})}
     total = float(sb["duration"])

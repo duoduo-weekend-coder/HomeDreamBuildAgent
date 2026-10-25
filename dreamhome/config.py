@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     script_model: str = "claude-opus-5-5"
 
     elevenlabs_api_key: str = ""
-    elevenlabs_voice_id: str = ""
+    elevenlabs_voice_id: str = "a0L48LDiuC3RCS8LXA36"  # Olena
 
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
