@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Home Video Studio</title>
+<title>Home Dream Build</title>
 <style>
   /* Fraunces Light for headlines and the names of templates and videos; Outfit for everything else. */
   @font-face { font-family: "Fraunces"; src: url(/assets/fraunces-light-latin.woff2) format("woff2"); font-weight: 300; font-display: swap; }
@@ -28,7 +28,11 @@
   h3 { font-size: 20px; margin-bottom: 8px; }
 
   header { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid var(--line); background: var(--surface); }
-  .wordmark { font-family: "Fraunces", Georgia, serif; font-size: 26px; font-weight: 300; color: var(--ink); text-decoration: none; letter-spacing: -.01em; }
+  .wordmark { font-family: "Fraunces", Georgia, serif; font-size: 26px; font-weight: 300; color: var(--ink); text-decoration: none; letter-spacing: -.01em;
+    display: inline-flex; align-items: center; gap: 14px; }
+  /* Triple Z LLC's mark, painted in the text colour through a mask (the original is white on black) */
+  .logo { width: 74px; aspect-ratio: 615 / 285; background: var(--ink);
+    -webkit-mask: url(/assets/logo-mark.png) center / contain no-repeat; mask: url(/assets/logo-mark.png) center / contain no-repeat; }
   main { max-width: 1280px; margin: 0 auto; padding: 28px 28px 80px; }
 
   /* ---------- controls */
@@ -266,7 +270,7 @@
 </head>
 <body>
 <header>
-  <a class="wordmark" href="#">Home Video Studio</a>
+  <a class="wordmark" href="#"><span class="logo" role="img" aria-label="Triple Z LLC logo"></span>Home Dream Build</a>
   <div class="header-actions">
   <button id="instagramSettingsBtn" class="ghost" type="button">Instagram settings</button>
   <button id="settingsBtn" class="ghost icon-btn" type="button">
@@ -808,7 +812,7 @@ async function jobView(id) {
     if (st.since === 0) {
       const r = j.request;
       $("#jTitle").textContent = jobName(j);
-      document.title = `${jobName(j)}: Home Video Studio`;
+      document.title = `${jobName(j)}: Home Dream Build`;
       $("#jWhat").textContent = `${j.home ? j.home + ", c" : "C"}reated ${created(j.created)}. ${list(r.lengths.map(l => l + " s"))}, ${list(r.aspects.map(a => ASPECT[a] || a))}, ${VOICE[r.voice] || r.voice}`
         + (r.highlight ? `. Highlight: “${r.highlight}”` : "")
         + (r.music && r.music !== "auto" ? `. Music: ${r.music === "none" ? "none" : trackName(r.music)}` : "");
