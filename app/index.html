@@ -83,6 +83,16 @@
   .summary code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
   .feedback-box { display: flex; gap: 8px; margin-top: 12px; }
   .feedback-box textarea { min-height: 46px; }
+  .mic-wrap { position: relative; flex: 1; min-width: 0; }
+  .mic-wrap input, .mic-wrap textarea { padding-right: 44px; }
+  .mic { position: absolute; right: 6px; top: 6px; width: 32px; height: 32px; border-radius: 50%; border: none; padding: 0;
+         background: transparent; color: var(--muted); display: grid; place-items: center; }
+  .mic:hover, .mic:focus-visible { color: var(--accent); background: var(--soft); }
+  .mic.rec { color: #fff; background: #c0392b; animation: pulse 1.2s infinite; }
+  .mic.busy { color: var(--accent); cursor: progress; }
+  .mic.busy svg { animation: pulse .8s infinite; }
+  .mic-msg { font-size: 12.5px; color: var(--warn); margin-top: 5px; }
+  .mic-msg.info { color: var(--muted); }
   dialog { border: 1px solid var(--line); border-radius: 14px; padding: 24px; width: min(520px, calc(100vw - 32px)); background: var(--panel); color: var(--ink); }
   dialog::backdrop { background: rgba(0,0,0,.35); }
   .voice-row { display: flex; gap: 8px; }
@@ -201,14 +211,14 @@ function homeView() {
         <summary>Home details (optional)</summary>
         <div class="hint">Used in titles and narration when given. Nothing is made up when left blank.</div>
         <div class="row2">
-          <div><label for="home_name">Home name</label><input id="home_name" type="text" placeholder="e.g. The Maple House"></div>
-          <div><label for="location">Location</label><input id="location" type="text" placeholder="e.g. Sammamish, WA"></div>
-          <div><label for="specs">Specs</label><input id="specs" type="text" placeholder="4 bed · 3 bath · 2,800 sq ft"></div>
-          <div><label for="builder">Builder</label><input id="builder" type="text" placeholder="Company name"></div>
+          <div><label for="home_name">Home name</label><input id="home_name" type="text" data-voice placeholder="e.g. The Maple House"></div>
+          <div><label for="location">Location</label><input id="location" type="text" data-voice placeholder="e.g. Sammamish, WA"></div>
+          <div><label for="specs">Specs</label><input id="specs" type="text" data-voice placeholder="4 bed · 3 bath · 2,800 sq ft"></div>
+          <div><label for="builder">Builder</label><input id="builder" type="text" data-voice placeholder="Company name"></div>
         </div>
       </details>
       <label for="notes">Anything else for the agent? (optional)</label>
-      <textarea id="notes" placeholder="e.g. Use the snowy aerials, keep it calm, end on the street view"></textarea>
+      <textarea id="notes" data-voice placeholder="e.g. Use the snowy aerials, keep it calm, end on the street view"></textarea>
       <div class="error" id="formErr"></div>
       <button class="primary" type="submit" id="submitBtn">Make videos</button>
     </form>
@@ -222,6 +232,7 @@ function homeView() {
     const n = ["kinds", "lengths", "aspects"].map(k => form.querySelectorAll(`input[name=${k}]:checked`).length).reduce((a, b) => a * b, 1);
     $("#count").textContent = n ? `Makes ${n} video${n > 1 ? "s" : ""}.` : "Pick at least one of each.";
   };
+  addMics(form);
   form.addEventListener("change", updateCount);
   updateCount();
   form.addEventListener("submit", async e => {
@@ -282,12 +293,13 @@ async function jobView(id) {
         <h2>Agent progress</h2>
         <div class="feed" id="feed"></div>
         <form class="feedback-box" id="fbForm">
-          <textarea id="fbText" placeholder="Ask for changes, e.g. 'shorter titles' or 'use more of the snowy street shots'"></textarea>
+          <textarea id="fbText" data-voice placeholder="Ask for changes, e.g. 'shorter titles' or 'use more of the snowy street shots'"></textarea>
           <button type="submit" id="fbBtn">Send</button>
         </form>
         <div class="error" id="fbErr"></div>
       </section>
     </div>`;
+  addMics($("#fbForm"));
   $("#cancelBtn").onclick = async () => { if (confirm("Stop the agent?")) await api(`/api/jobs/${id}/cancel`, { method: "POST" }); };
   $("#fbForm").onsubmit = async e => {
     e.preventDefault();
@@ -353,6 +365,130 @@ async function jobView(id) {
   poll();
 }
 
+// ---------------------------------------------------------------- voice input
+
+// Safari and Chrome transcribe in the browser (live, free). Elsewhere, or if that service is unavailable,
+// record the mic and let the server transcribe it with ElevenLabs Speech to Text.
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let useServerSpeech = !SpeechRec;
+let activeMic = null;
+const MIC_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`;
+
+function addMics(root) {
+  root.querySelectorAll("[data-voice]").forEach(field => {
+    if (field.parentElement.classList.contains("mic-wrap")) return;
+    const wrap = document.createElement("div");
+    wrap.className = "mic-wrap";
+    field.replaceWith(wrap);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "mic";
+    btn.title = "Speak instead of typing (click again to stop)";
+    btn.setAttribute("aria-label", "Voice input");
+    btn.innerHTML = MIC_SVG;
+    const msg = document.createElement("div");
+    msg.className = "mic-msg";
+    msg.hidden = true;
+    wrap.append(field, btn, msg);
+    btn.onclick = () => toggleMic(btn, field, msg);
+  });
+}
+
+function micNote(msg, text, info = false) {
+  msg.textContent = text;
+  msg.className = "mic-msg" + (info ? " info" : "");
+  msg.hidden = !text;
+  clearTimeout(msg._t);
+  if (text && !info) msg._t = setTimeout(() => (msg.hidden = true), 7000);
+}
+
+function putText(field, before, spoken) {
+  const sep = before && spoken && !/\s$/.test(before) ? " " : "";
+  field.value = before + sep + spoken;
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function toggleMic(btn, field, msg) {
+  if (activeMic) {
+    const same = activeMic.btn === btn;
+    activeMic.stop();
+    if (same) return;
+  }
+  if (btn.classList.contains("busy")) return;
+  if (!useServerSpeech) return listenInBrowser(btn, field, msg);
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder)
+    return micNote(msg, "This browser can't use the microphone. Try Safari or Chrome.");
+  if (!settingsState.elevenlabs_configured)
+    return micNote(msg, "Voice input here needs Safari or Chrome, or an ElevenLabs key in Voice settings.");
+  recordForServer(btn, field, msg);
+}
+
+function listenInBrowser(btn, field, msg) {
+  const rec = new SpeechRec();
+  rec.lang = navigator.language || "en-US";
+  rec.interimResults = true;
+  rec.continuous = true;
+  const before = field.value;
+  let finalText = "", switched = false;
+  rec.onresult = e => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    putText(field, before, (finalText + interim).trim());
+  };
+  rec.onerror = e => {
+    if (e.error === "not-allowed") return micNote(msg, "Microphone access was blocked. Allow it in the browser's site settings.");
+    if (e.error === "no-speech" || e.error === "aborted") return;
+    // The browser's speech service isn't available here: record and transcribe on the server instead.
+    useServerSpeech = true;
+    switched = true;
+  };
+  rec.onend = () => {
+    btn.classList.remove("rec");
+    activeMic = null;
+    micNote(msg, "");
+    if (switched) toggleMic(btn, field, msg);
+  };
+  rec.start();
+  btn.classList.add("rec");
+  micNote(msg, "Listening… click the mic again to stop.", true);
+  activeMic = { btn, stop: () => rec.stop() };
+}
+
+async function recordForServer(btn, field, msg) {
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch { return micNote(msg, "Microphone access was blocked. Allow it in the browser's site settings."); }
+  const recorder = new MediaRecorder(stream);
+  const chunks = [];
+  const limit = setTimeout(() => recorder.state === "recording" && recorder.stop(), 120000);
+  recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
+  recorder.onstop = async () => {
+    clearTimeout(limit);
+    stream.getTracks().forEach(t => t.stop());
+    btn.classList.remove("rec");
+    activeMic = null;
+    if (!chunks.length) return micNote(msg, "");
+    btn.classList.add("busy");
+    micNote(msg, "Transcribing…", true);
+    try {
+      const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+      const res = await fetch("/api/transcribe", { method: "POST", headers: { "Content-Type": blob.type }, body: blob });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Transcription failed");
+      putText(field, field.value, data.text);
+      micNote(msg, data.text ? "" : "Didn't catch any words. Try again a little closer to the mic.");
+    } catch (err) { micNote(msg, err.message); }
+    finally { btn.classList.remove("busy"); }
+  };
+  recorder.start();
+  btn.classList.add("rec");
+  micNote(msg, "Recording… click the mic again to stop.", true);
+  activeMic = { btn, stop: () => recorder.state === "recording" && recorder.stop() };
+}
+
 // ---------------------------------------------------------------- settings
 
 async function loadSettings() {
@@ -415,6 +551,7 @@ $("#saveSettings").onclick = async () => {
 
 function route() {
   clearInterval(timer); clearTimeout(timer);
+  if (activeMic) activeMic.stop();
   const m = location.hash.match(/^#\/job\/(.+)$/);
   m ? jobView(m[1]) : homeView();
 }
