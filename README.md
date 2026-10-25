@@ -37,3 +37,26 @@ Then open http://localhost:8000. Paste a Google Drive folder link (or a local fo
 ## Privacy
 
 API keys live in `.env` (created by the Voice settings panel, readable only by you). Footage (`media/`), renders and job history (`jobs/`) stay on your machine. All of these are git-ignored.
+
+## Reels pipeline and CRM agent (`dreamhome/`)
+
+The second half of the project turns a media library into scheduled Instagram reels and turns viewers into booked calls. It's a uv project (Python 3.12):
+
+```bash
+uv sync
+cp .env.example .env              # add ANTHROPIC_API_KEY, ELEVENLABS_API_KEY/VOICE_ID, ...
+uv run python scripts/demo_t1.py   # "vibe final show" reel from the White House photos
+uv run python scripts/demo_tour.py # full walk-through: every unique scene once
+```
+
+| Piece | What it does |
+| --- | --- |
+| `dreamhome/reels/` | Shot selection (Claude vision), script writing, auto straightening (tilt + keystone), eased camera moves, Montserrat captions synced to ElevenLabs word timings, stat/CTA cards, FFmpeg render |
+| `dreamhome/integrations/` | Google Drive, Instagram Graph API (publish reels, DMs, comment replies), Google Calendar, Twilio SMS, ElevenLabs. Each runs in mock mode when its keys are missing |
+| `dreamhome/crm/` | CRM agent tools (save lead, check availability, book, text team, hand off) and guardrails: never quotes prices |
+| `config/business.yaml` | Everything business-specific (brand, values, lead questions, booking hours), so it works for any small business |
+| `docs/reel-templates.md` | The 4 viral templates: building process, vibe final show, drone + process, walk-through with narrative |
+| `docs/presentation/index.html` | Interactive hackathon deck (open locally; it reads images from the git-ignored `data/`) |
+| `docs/superpowers/` | Design spec and implementation plan |
+
+Media catalogs (tags, quality, scene dedupe) are written to `data/`, which is git-ignored because it holds client photos.
