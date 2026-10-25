@@ -1,0 +1,27 @@
+{
+  "kind": "build",
+  "duration": 15,
+  "aspect": "16:9",
+  "info": {"home_name": "", "location": "", "specs": "", "builder": ""},
+  "voice": {"provider": "auto"},
+  "music": null,
+  "shots": [
+    {"source": "media/build/01-site.jpg", "duration": 2.75, "motion": "zoom_out",
+     "kicker": "Step 1", "title": "Breaking ground",
+     "narration": "From an empty lot..."},
+    {"source": "media/build/02-foundation.jpg", "duration": 2.75, "motion": "pan_right",
+     "kicker": "Step 2", "title": "Foundation",
+     "narration": "to a solid foundation..."},
+    {"source": "media/build/03-framing.jpg", "duration": 2.75, "motion": "zoom_in",
+     "kicker": "Step 3", "title": "Framing",
+     "narration": "framing and finishes..."},
+    {"source": "media/build/04-finishes.jpg", "duration": 2.75, "motion": "pan_left",
+     "kicker": "Step 4", "title": "Interior finishes"},
+    {"source": "media/build/05-complete.jpg", "duration": 3.5, "motion": "zoom_out",
+     "kicker": "Complete", "title": "Welcome home",
+     "narration": "every detail, built with care."},
+    {"source": "card", "duration": 3.0,
+     "title": ["{home_name}", "Built With Care"], "subtitle": ["Built by {builder}", "{location}"],
+     "narration": "Welcome home."}
+  ]
+}

@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Video Studio</title>
+<style>
+  :root {
+    --bg: #f6f3ee; --panel: #ffffff; --ink: #1f2420; --muted: #6b716b; --line: #e4dfd6;
+    --accent: #2f5d4a; --accent-ink: #ffffff; --soft: #eef3ef; --warn: #a3471f; --ok: #2f7d4f;
+    --chip: #f0ece4; --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151816; --panel: #1d211e; --ink: #e9ece8; --muted: #9aa29b; --line: #2e3430;
+            --accent: #7fb89c; --accent-ink: #0f1411; --soft: #1f2a24; --warn: #e48a62; --ok: #7fcf9c; --chip: #262b27;
+            --shadow: none; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Avenir Next", "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 18px; margin: 0; letter-spacing: .2px; cursor: pointer; }
+  header h1 span { color: var(--muted); font-weight: 400; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 28px 60px; }
+  .grid { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 24px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } main, header { padding-left: 16px; padding-right: 16px; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; box-shadow: var(--shadow); }
+  h2 { font-size: 16px; margin: 0 0 14px; }
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 20px 0 8px; font-weight: 600; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 5px; }
+  input[type=text], input[type=password], textarea, select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); font: inherit; }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toggle { position: relative; }
+  .toggle input { position: absolute; opacity: 0; }
+  .toggle span { display: inline-block; padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; background: var(--bg); user-select: none; font-size: 14px; }
+  .toggle input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 14px; margin-top: 16px; }
+  button { font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 9px 14px; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; width: 100%; padding: 12px; margin-top: 18px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .hint { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .error { color: var(--warn); font-size: 14px; margin-top: 10px; }
+  .jobs { display: flex; flex-direction: column; gap: 10px; }
+  .job { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); cursor: pointer; }
+  .job:hover { border-color: var(--accent); }
+  .job .meta { font-size: 13px; color: var(--muted); }
+  .usage { font-size: 12.5px; color: var(--muted); }
+  .usage span { cursor: help; border-bottom: 1px dotted var(--line); }
+  .pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--chip); white-space: nowrap; }
+  .pill.running, .pill.queued { background: var(--soft); color: var(--accent); }
+  .pill.done { color: var(--ok); }
+  .pill.failed, .pill.cancelled, .pill.interrupted { color: var(--warn); }
+  .pill.running::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: 6px; animation: pulse 1.2s infinite; vertical-align: 1px; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  .empty { color: var(--muted); padding: 30px; text-align: center; border: 1px dashed var(--line); border-radius: 12px; }
+  .detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .detail-head h2 { font-size: 22px; margin: 0 0 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; background: var(--chip); padding: 3px 9px; border-radius: 6px; }
+  .videos { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .video { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; flex: 1 1 340px; max-width: 100%; }
+  .video.tall { flex: 0 1 220px; }
+  .video video { width: 100%; display: block; background: #000; aspect-ratio: var(--ar, 16 / 9); object-fit: contain; }
+  .video .cap { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; font-size: 13px; }
+  .video a { color: var(--accent); }
+  .video .links { display: flex; gap: 12px; }
+  .feed { display: flex; flex-direction: column; gap: 6px; max-height: 520px; overflow-y: auto; padding-right: 4px; }
+  .ev { font-size: 13.5px; }
+  .ev.tool { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding-left: 14px; border-left: 2px solid var(--line); }
+  .ev.tool_error { color: var(--warn); font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding-left: 14px; border-left: 2px solid var(--warn); white-space: pre-wrap; }
+  .ev.say { background: var(--soft); padding: 10px 13px; border-radius: 10px; white-space: pre-wrap; }
+  .ev.feedback { align-self: flex-end; background: var(--accent); color: var(--accent-ink); padding: 9px 13px; border-radius: 10px; max-width: 85%; white-space: pre-wrap; }
+  .ev.status { color: var(--muted); font-size: 12px; text-align: center; }
+  .ev.done { border: 1px solid var(--ok); padding: 10px 13px; border-radius: 10px; white-space: pre-wrap; }
+  .ev.error { border: 1px solid var(--warn); color: var(--warn); padding: 10px 13px; border-radius: 10px; white-space: pre-wrap; }
+  .summary { font-size: 14px; }
+  .summary h1, .summary h2, .summary h3 { text-transform: none; letter-spacing: 0; color: var(--ink); font-size: 15px; margin: 14px 0 6px; }
+  .summary ul { padding-left: 20px; margin: 6px 0; }
+  .summary code { background: var(--chip); padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  .feedback-box { display: flex; gap: 8px; margin-top: 12px; }
+  .feedback-box textarea { min-height: 46px; }
+  dialog { border: 1px solid var(--line); border-radius: 14px; padding: 24px; width: min(520px, calc(100vw - 32px)); background: var(--panel); color: var(--ink); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  .voice-row { display: flex; gap: 8px; }
+  .link { background: none; border: none; color: var(--accent); padding: 0; }
+  .status-line { font-size: 13px; margin-top: 8px; }
+  .ok-text { color: var(--ok); }
+</style>
+</head>
+<body>
+<header>
+  <h1 onclick="location.hash=''">Home Video Studio <span>· overview &amp; build videos</span></h1>
+  <button id="settingsBtn" aria-label="Voice settings">Voice settings</button>
+</header>
+<main id="view"></main>
+
+<dialog id="settings">
+  <h2>Voice settings</h2>
+  <p class="hint">Narration uses ElevenLabs when a key is saved. Create one at elevenlabs.io under <b>Developers → API keys</b> and give it <b>Text to Speech</b> and <b>Voices (read)</b> access. It's stored only in this project's <code>.env</code> file on this Mac.</p>
+  <label for="elKey">ElevenLabs API key</label>
+  <input id="elKey" type="password" autocomplete="off" placeholder="sk_…">
+  <div id="elStatus" class="status-line"></div>
+  <div id="voicePick" hidden>
+    <label for="elVoice">Narrator voice</label>
+    <div class="voice-row">
+      <select id="elVoice"></select>
+      <button id="previewBtn" type="button">▶ Preview</button>
+    </div>
+  </div>
+  <div id="settingsErr" class="error"></div>
+  <div style="display:flex; gap:8px; justify-content:space-between; margin-top:20px;">
+    <button id="removeKey" class="link" type="button" hidden>Remove key</button>
+    <span style="flex:1"></span>
+    <button type="button" onclick="settings.close()">Close</button>
+    <button id="saveSettings" type="button" style="background:var(--accent);color:var(--accent-ink);border-color:var(--accent)">Save</button>
+  </div>
+</dialog>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const KIND = { overview: "Overview", build: "Build process" };
+const STATUS = { queued: "Queued", running: "Working", done: "Done", failed: "Failed", cancelled: "Cancelled", interrupted: "Interrupted" };
+let settingsState = { elevenlabs_configured: false };
+let timer = null;
+const audio = new Audio();
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts,
+    body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+
+function ago(t) {
+  const s = Math.round(Date.now() / 1000 - t);
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
+  return new Date(t * 1000).toLocaleDateString();
+}
+
+function markdown(md) {
+  const lines = esc(md).split("\n");
+  let html = "", inList = false;
+  for (const raw of lines) {
+    const line = raw.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
+    const item = line.match(/^\s*[-*] (.*)/);
+    if (item) { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${item[1]}</li>`; continue; }
+    if (inList) { html += "</ul>"; inList = false; }
+    const h = line.match(/^(#{1,3}) (.*)/);
+    if (h) html += `<h3>${h[2]}</h3>`;
+    else if (line.trim()) html += `<p>${line}</p>`;
+  }
+  return html + (inList ? "</ul>" : "");
+}
+
+// ---------------------------------------------------------------- home
+
+function homeView() {
+  const eleven = settingsState.elevenlabs_configured;
+  $("#view").innerHTML = `
+  <div class="grid">
+    <form class="card" id="newJob">
+      <h2>New video</h2>
+      <label for="source">Footage</label>
+      <input id="source" type="text" placeholder="Google Drive folder link, or a folder on this Mac" required>
+      <div class="hint">The agent reads Drive metadata first and downloads only the shots it uses.</div>
+
+      <h3>Kind</h3>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" name="kinds" value="overview"><span>Overview · surroundings &amp; room tour</span></label>
+        <label class="toggle"><input type="checkbox" name="kinds" value="build" checked><span>Build process</span></label>
+      </div>
+      <h3>Length</h3>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" name="lengths" value="15" checked><span>15 s</span></label>
+        <label class="toggle"><input type="checkbox" name="lengths" value="30"><span>30 s</span></label>
+      </div>
+      <h3>Format</h3>
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" name="aspects" value="16:9" checked><span>Horizontal 16:9</span></label>
+        <label class="toggle"><input type="checkbox" name="aspects" value="9:16"><span>Vertical 9:16</span></label>
+        <label class="toggle"><input type="checkbox" name="aspects" value="1:1"><span>Square 1:1</span></label>
+      </div>
+      <div class="hint" id="count"></div>
+
+      <label for="voice">Narrator</label>
+      <select id="voice">
+        <option value="elevenlabs" ${eleven ? "selected" : "disabled"}>ElevenLabs${eleven ? (settingsState.elevenlabs_voice_name ? " · " + esc(settingsState.elevenlabs_voice_name) : "") : " (add key in Voice settings)"}</option>
+        <option value="edge" ${eleven ? "" : "selected"}>Free natural voice (Microsoft)</option>
+        <option value="say">Mac voice (draft quality)</option>
+      </select>
+
+      <details>
+        <summary>Home details (optional)</summary>
+        <div class="hint">Used in titles and narration when given. Nothing is made up when left blank.</div>
+        <div class="row2">
+          <div><label for="home_name">Home name</label><input id="home_name" type="text" placeholder="e.g. The Maple House"></div>
+          <div><label for="location">Location</label><input id="location" type="text" placeholder="e.g. Sammamish, WA"></div>
+          <div><label for="specs">Specs</label><input id="specs" type="text" placeholder="4 bed · 3 bath · 2,800 sq ft"></div>
+          <div><label for="builder">Builder</label><input id="builder" type="text" placeholder="Company name"></div>
+        </div>
+      </details>
+      <label for="notes">Anything else for the agent? (optional)</label>
+      <textarea id="notes" placeholder="e.g. Use the snowy aerials, keep it calm, end on the street view"></textarea>
+      <div class="error" id="formErr"></div>
+      <button class="primary" type="submit" id="submitBtn">Make videos</button>
+    </form>
+    <section>
+      <h2>Jobs</h2>
+      <div class="jobs" id="jobs"><div class="empty">Loading…</div></div>
+    </section>
+  </div>`;
+  const form = $("#newJob");
+  const updateCount = () => {
+    const n = ["kinds", "lengths", "aspects"].map(k => form.querySelectorAll(`input[name=${k}]:checked`).length).reduce((a, b) => a * b, 1);
+    $("#count").textContent = n ? `Makes ${n} video${n > 1 ? "s" : ""}.` : "Pick at least one of each.";
+  };
+  form.addEventListener("change", updateCount);
+  updateCount();
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const pick = k => [...form.querySelectorAll(`input[name=${k}]:checked`)].map(i => i.value);
+    $("#submitBtn").disabled = true;
+    $("#formErr").textContent = "";
+    try {
+      const job = await api("/api/jobs", { method: "POST", body: {
+        source: $("#source").value, kinds: pick("kinds"), lengths: pick("lengths"), aspects: pick("aspects"),
+        voice: $("#voice").value, notes: $("#notes").value,
+        info: Object.fromEntries(["home_name", "location", "specs", "builder"].map(k => [k, $("#" + k).value])) } });
+      location.hash = `#/job/${job.id}`;
+    } catch (err) {
+      $("#formErr").textContent = err.message;
+      $("#submitBtn").disabled = false;
+    }
+  });
+  refreshJobs();
+  timer = setInterval(refreshJobs, 4000);
+}
+
+async function refreshJobs() {
+  const list = await api("/api/jobs").catch(() => null);
+  const el = $("#jobs");
+  if (!list || !el) return;
+  el.innerHTML = list.length ? list.map(j => `
+    <div class="job" tabindex="0" onclick="location.hash='#/job/${j.id}'" onkeydown="if(event.key==='Enter')location.hash='#/job/${j.id}'">
+      <div>
+        <div><b>${esc(j.title)}</b></div>
+        <div class="meta">${j.kinds.map(k => KIND[k]).join(" + ")} · ${j.lengths.map(l => l + "s").join(", ")} · ${j.aspects.join(", ")} · ${ago(j.created)}${j.videos ? ` · ${j.videos} video${j.videos > 1 ? "s" : ""}` : ""}</div>
+      </div>
+      <span class="pill ${j.status}">${STATUS[j.status] || j.status}</span>
+    </div>`).join("") : `<div class="empty">No jobs yet. Your videos will show up here.</div>`;
+}
+
+// ---------------------------------------------------------------- job detail
+
+async function jobView(id) {
+  let since = 0, lastStatus = null, outputsKey = "", summaryText = null;
+  $("#view").innerHTML = `
+    <div class="detail-head">
+      <div><h2 id="jTitle">…</h2><div class="chips" id="jChips"></div></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span class="usage" id="jUsage"></span>
+        <span class="pill" id="jStatus"></span>
+        <button id="cancelBtn" hidden>Cancel</button>
+        <button onclick="location.hash=''">← All jobs</button>
+      </div>
+    </div>
+    <div class="grid" style="grid-template-columns: minmax(0,1fr) minmax(0,400px);">
+      <section>
+        <div class="videos" id="videos"></div>
+        <div id="noVideos" class="empty">Videos appear here as soon as they're rendered.</div>
+        <div class="card" id="summaryCard" style="margin-top:18px" hidden><h2>Summary from the agent</h2><div class="summary" id="summary"></div></div>
+      </section>
+      <section class="card">
+        <h2>Agent progress</h2>
+        <div class="feed" id="feed"></div>
+        <form class="feedback-box" id="fbForm">
+          <textarea id="fbText" placeholder="Ask for changes, e.g. 'shorter titles' or 'use more of the snowy street shots'"></textarea>
+          <button type="submit" id="fbBtn">Send</button>
+        </form>
+        <div class="error" id="fbErr"></div>
+      </section>
+    </div>`;
+  $("#cancelBtn").onclick = async () => { if (confirm("Stop the agent?")) await api(`/api/jobs/${id}/cancel`, { method: "POST" }); };
+  $("#fbForm").onsubmit = async e => {
+    e.preventDefault();
+    $("#fbErr").textContent = "";
+    try { await api(`/api/jobs/${id}/feedback`, { method: "POST", body: { text: $("#fbText").value } }); $("#fbText").value = ""; poll(); }
+    catch (err) { $("#fbErr").textContent = err.message; }
+  };
+
+  const feed = $("#feed");
+  async function poll() {
+    let j;
+    try { j = await api(`/api/jobs/${id}?since=${since}`); }
+    catch (err) { feed.innerHTML = `<div class="ev error">${esc(err.message)}</div>`; return; }
+    if (since === 0) {
+      $("#jTitle").textContent = j.title;
+      const r = j.request;
+      $("#jChips").innerHTML = [...r.kinds.map(k => KIND[k]), ...r.lengths.map(l => l + " s"), ...r.aspects,
+        { elevenlabs: "ElevenLabs", edge: "Free voice", say: "Mac voice" }[r.voice] || r.voice].map(c => `<span class="chip">${esc(c)}</span>`).join("");
+    }
+    const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
+    for (const ev of j.events) {
+      const div = document.createElement("div");
+      div.className = `ev ${ev.kind}`;
+      div.textContent = ev.kind === "done" ? `✓ ${ev.text}${ev.seconds ? `  (${Math.round(ev.seconds / 60)} min)` : ""}` : ev.text;
+      feed.appendChild(div);
+    }
+    since = j.next;
+    if (atBottom || j.events.length && since === j.events.length) feed.scrollTop = feed.scrollHeight;
+
+    const busy = j.status === "running" || j.status === "queued";
+    $("#jStatus").className = `pill ${j.status}`;
+    $("#jStatus").textContent = STATUS[j.status] || j.status;
+    const usage = [];
+    if (j.cost) usage.push(`<span title="Model usage reported by Claude Code for every agent run on this job. With a Claude subscription it's an estimate at API rates that counts toward your plan's limits; with an API key it's roughly what's billed.">Claude agent est. <b>$${j.cost.toFixed(2)}</b></span>`);
+    if (j.elevenlabs_characters) usage.push(`<span title="Narration characters sent to ElevenLabs, charged against your ElevenLabs plan's credits. Re-renders that reuse the same lines don't count again.">ElevenLabs <b>${j.elevenlabs_characters.toLocaleString()}</b> characters</span>`);
+    $("#jUsage").innerHTML = usage.join(" · ");
+    $("#cancelBtn").hidden = !busy;
+    $("#fbBtn").disabled = busy;
+    $("#fbText").placeholder = busy ? "You can send changes once this run finishes." : "Ask for changes, e.g. 'shorter titles' or 'use more of the snowy street shots'";
+
+    const key = j.outputs.map(o => o.url).join("|");
+    if (key !== outputsKey) {
+      outputsKey = key;
+      const shape = name => { const m = name.match(/(\d+)x(\d+)\.mp4$/); return m ? [+m[1], +m[2]] : [16, 9]; };
+      const tall = o => { const [w, h] = shape(o.name); return h > w ? 1 : 0; };
+      const ordered = [...j.outputs].sort((a, b) => tall(a) - tall(b) || a.name.localeCompare(b.name));
+      $("#videos").innerHTML = ordered.map(o => { const [w, h] = shape(o.name); return `
+        <div class="video ${h > w ? "tall" : ""}" style="--ar: ${w} / ${h}">
+          <video controls preload="metadata" playsinline src="${o.url}"></video>
+          <div class="cap"><span>${esc(o.name)}</span><span class="links">${o.metadata_md ? `<a href="${o.metadata_md}" target="_blank" rel="noopener">Metadata</a>` : ""}<a href="${o.url}" download="${esc(o.name)}">Download</a></span></div>
+        </div>`; }).join("");
+      $("#noVideos").hidden = j.outputs.length > 0;
+    }
+    if (j.summary !== summaryText) {
+      summaryText = j.summary;
+      $("#summaryCard").hidden = !j.summary;
+      $("#summary").innerHTML = markdown(j.summary);
+    }
+    lastStatus = j.status;
+    clearTimeout(timer);
+    timer = setTimeout(poll, busy ? 1500 : 6000);
+  }
+  poll();
+}
+
+// ---------------------------------------------------------------- settings
+
+async function loadSettings() {
+  settingsState = await api("/api/settings").catch(() => settingsState);
+}
+
+async function openSettings() {
+  await loadSettings();
+  $("#elKey").value = "";
+  $("#settingsErr").textContent = "";
+  $("#removeKey").hidden = !settingsState.elevenlabs_configured;
+  $("#elStatus").innerHTML = settingsState.elevenlabs_configured
+    ? `<span class="ok-text">● Key saved.</span> Paste a new one to replace it.` : "No key saved yet.";
+  $("#voicePick").hidden = true;
+  if (settingsState.elevenlabs_configured) await loadVoices();
+  settings.showModal();
+}
+
+async function loadVoices() {
+  try {
+    const voices = await api("/api/voices");
+    const sel = $("#elVoice");
+    sel.innerHTML = voices.map(v => `<option value="${esc(v.id)}" data-preview="${esc(v.preview || "")}" data-name="${esc(v.name)}"
+      ${v.id === settingsState.elevenlabs_voice_id ? "selected" : ""}>${esc(v.name)}${v.labels ? " — " + esc(v.labels) : ""}</option>`).join("");
+    $("#voicePick").hidden = !voices.length;
+  } catch (err) { $("#settingsErr").textContent = err.message; }
+}
+
+$("#settingsBtn").onclick = openSettings;
+$("#previewBtn").onclick = () => {
+  const opt = $("#elVoice").selectedOptions[0];
+  if (opt?.dataset.preview) { audio.src = opt.dataset.preview; audio.play(); }
+};
+$("#removeKey").onclick = async () => {
+  if (!confirm("Remove the saved ElevenLabs key from this Mac?")) return;
+  await api("/api/settings", { method: "POST", body: { remove_elevenlabs: true } });
+  settings.close(); await loadSettings(); route();
+};
+$("#saveSettings").onclick = async () => {
+  $("#settingsErr").textContent = "";
+  const body = {};
+  if ($("#elKey").value.trim()) body.elevenlabs_api_key = $("#elKey").value.trim();
+  const opt = $("#elVoice").selectedOptions[0];
+  if (!$("#voicePick").hidden && opt) { body.elevenlabs_voice_id = opt.value; body.elevenlabs_voice_name = opt.dataset.name; }
+  try {
+    $("#saveSettings").disabled = true;
+    await api("/api/settings", { method: "POST", body });
+    await loadSettings();
+    if (body.elevenlabs_api_key && !body.elevenlabs_voice_id) {
+      $("#elKey").value = "";
+      $("#elStatus").innerHTML = `<span class="ok-text">● Key works and is saved.</span> Now pick a voice.`;
+      $("#removeKey").hidden = false;
+      await loadVoices();
+    } else { settings.close(); route(); }
+  } catch (err) { $("#settingsErr").textContent = err.message; }
+  finally { $("#saveSettings").disabled = false; }
+};
+
+// ---------------------------------------------------------------- routing
+
+function route() {
+  clearInterval(timer); clearTimeout(timer);
+  const m = location.hash.match(/^#\/job\/(.+)$/);
+  m ? jobView(m[1]) : homeView();
+}
+window.addEventListener("hashchange", route);
+loadSettings().then(route);
+</script>
+</body>
+</html>

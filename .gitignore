@@ -1,0 +1,17 @@
+# Secrets (API keys saved from the Voice settings panel)
+.env
+.env.*
+
+# Footage, renders and job history stay local: large and private
+media/
+jobs/
+output/
+storyboards/
+
+# Local tool settings
+.claude/settings.local.json
+
+# Python / macOS
+__pycache__/
+*.pyc
+.DS_Store
