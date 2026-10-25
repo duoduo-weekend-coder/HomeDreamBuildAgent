@@ -69,10 +69,9 @@ def write_env_file(updates: dict) -> None:
     ENV_FILE.chmod(0o600)
 
 
-def eleven_get(path: str, key: str) -> dict:
-    req = urllib.request.Request(f"{ELEVEN_API}{path}", headers={"xi-api-key": key})
+def eleven_request(req: urllib.request.Request, permission: str, timeout: int = 20) -> dict:
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", "replace")
@@ -81,8 +80,32 @@ def eleven_get(path: str, key: str) -> dict:
             message = detail.get("message") if isinstance(detail, dict) else str(detail)
         except (ValueError, KeyError, TypeError):
             message = body[:200]
-        hint = " Check the key's permissions include Voices (read)." if e.code in (401, 403) and "permission" in body else ""
+        hint = f" Check the key's permissions include {permission}." if e.code in (401, 403) and "permission" in body else ""
         raise ValueError(f"ElevenLabs said: {message}.{hint}") from None
+
+
+def eleven_get(path: str, key: str) -> dict:
+    return eleven_request(urllib.request.Request(f"{ELEVEN_API}{path}", headers={"xi-api-key": key}), "Voices (read)")
+
+
+AUDIO_EXTS = {"audio/webm": "webm", "audio/mp4": "m4a", "audio/ogg": "ogg", "audio/wav": "wav", "audio/mpeg": "mp3"}
+MAX_AUDIO_BYTES = 20 * 1024 * 1024
+
+
+def transcribe(audio: bytes, content_type: str, key: str) -> str:
+    """Speech to text with ElevenLabs Scribe, for the page's mic buttons where the browser can't do it itself."""
+    mime = content_type.split(";")[0].strip() or "audio/webm"
+    boundary = uuid.uuid4().hex
+    fields = {"model_id": "scribe_v1", "tag_audio_events": "false"}
+    body = b"".join(
+        f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode() for k, v in fields.items()
+    ) + (
+        f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="voice.{AUDIO_EXTS.get(mime, "webm")}"\r\n'
+        f"Content-Type: {mime}\r\n\r\n"
+    ).encode() + audio + f"\r\n--{boundary}--\r\n".encode()
+    req = urllib.request.Request(f"{ELEVEN_API}/speech-to-text", data=body, method="POST",
+                                 headers={"xi-api-key": key, "Content-Type": f"multipart/form-data; boundary={boundary}"})
+    return eleven_request(req, "Speech to Text", timeout=60).get("text", "").strip()
 
 
 def agent_env() -> dict:
@@ -423,6 +446,19 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parts = [p for p in urlparse(self.path).path.split("/") if p]
+        if parts == ["api", "transcribe"]:
+            key = read_env_file().get("ELEVENLABS_API_KEY")
+            length = int(self.headers.get("Content-Length") or 0)
+            if not key:
+                return self.send_json({"error": "Voice input in this browser needs an ElevenLabs key (Voice settings)."}, 400)
+            if not 0 < length <= MAX_AUDIO_BYTES:
+                return self.send_json({"error": "Recording is empty or too long."}, 400)
+            audio = self.rfile.read(length)
+            try:
+                text = transcribe(audio, self.headers.get("Content-Type", ""), key)
+            except (ValueError, OSError) as e:
+                return self.send_json({"error": str(e)}, 502)
+            return self.send_json({"text": text})
         try:
             body = self.read_json()
         except json.JSONDecodeError:
