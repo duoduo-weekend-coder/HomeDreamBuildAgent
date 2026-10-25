@@ -1,35 +1,45 @@
 {
   "build": {
-    "label": "Building process",
-    "tagline": "Bare lot to finished home, one stage per shot.",
-    "goal": "Prove we build on time: show the whole build in order.",
-    "media": "Process photos and phone clips (shoot dates give the order); one finished shot for the reveal.",
+    "label": "Process + final",
+    "tagline": "A quick look at the build, then the finished home in rich detail.",
+    "goal": "Prove the craft: a fast taste of the construction, then a long, luxurious payoff of the finished home.",
+    "media": "Process: 3-5 construction shots (framing walk-throughs through stud walls, the sheathed shell, ideally the builder's site sign). Final: hero interiors, close-up details (faucets, range, stone, light fixtures), then exterior architecture and outdoor living.",
     "story": [
-      "Hook (0-2s): flash the finished home with the title 'How we built this' (or the highlight message).",
-      "Then construction in date order, one stage per shot: site -> foundation -> framing -> roof & wrap -> siding / exterior -> interior finishes.",
-      "Kicker on every stage shot: 'Step 1', 'Step 2'...; title names the stage in 1-3 words.",
-      "Reveal: the finished home, kicker 'Complete'.",
-      "End card: highlight message or builder name, plus 'Comment BUILD'."
+      "Brand hook (first beat or two): the site with the builder's sign, or the earliest construction shot, with the highlight message (or builder name) as the only title.",
+      "Process act, about 15% of the video: 3-5 construction shots of 1-1.5 s, ideally slow walks through the framing with a centred vanishing point.",
+      "Hard switch to the finished home, about 70%: alternate close-up details (gold faucet, range knobs, marble, light fixture) with wide rooms, one shot every 2 beats.",
+      "Finale, about 15%: exterior architecture and outdoor living, held longer (2-3 s) as the music resolves; the highlight message and 'Comment BUILD' on the last shot.",
+      "Hard cuts only, no cross-fades. No step labels, no captions, and no voiceover unless the user asks for one."
     ],
-    "voice": "Short, factual, time-driven: name each stage, end on the result. About 2.3 words per second.",
-    "pace": "Fast cuts, 1.5-2.5s per shot.",
-    "files": {"15": "build-15s.json", "30": "build-30s.json"}
+    "voice": "None: the music carries it (the reference has no narration). Only add one short line if the user asks.",
+    "pace": "Cut every 2 beats on the music (about 1.5 s at 80 bpm); slow push-ins on every photo; last two shots held 2-3 s.",
+    "music": "Warm, cinematic or acoustic-pop track around 75-95 bpm with a clear beat.",
+    "reference": "data/others_video_reference/both_process_and_final.mp4",
+    "files": {
+      "15": "build-15s.json",
+      "30": "build-30s.json"
+    }
   },
   "showcase": {
     "label": "Vibe final show",
-    "tagline": "Mood piece of the finished home: best shots, music first.",
-    "goal": "Make people stop scrolling: the finished home at its most beautiful.",
-    "media": "Only hero-quality interior and exterior photos of the finished home, plus finished-home drone clips.",
+    "tagline": "Fast, music-led mood reel of the finished home, opened by a flash teaser.",
+    "goal": "Make people stop scrolling: energy and atmosphere of the finished home, not information.",
+    "media": "Hero and good photos and clips of the finished home in warm natural light: living spaces, kitchen, styled details (vases, books, bedding), outdoor living. Same-angle pairs (before/after styling, day/evening) are gold.",
     "story": [
-      "Hook (0-3s): the single most striking shot, with the highlight message (or the home's specs) as a big title.",
-      "Then the best 5-8 shots, alternating wide and detail, light-filled rooms first.",
-      "Best view or most dramatic space LAST before the end card.",
-      "Titles are one or two words (room or feeling), or none at all; no 'Step' kickers.",
-      "End card: highlight message or home name, plus 'Comment BUILD'."
+      "Flash teaser (first ~1.2 s): 5 hard cuts of about 0.25 s each, using the best shots that appear later. This is the one place a shot may repeat.",
+      "Main run: a quick cut roughly every second (1.5-2 beats), wide rooms mixed with medium shots, kitchen and living first.",
+      "Revisit one or two hero angles later in the reel (same framing, different light or styling) to show transformation.",
+      "Wind down: a close-up styled detail, then the calmest wide room held 2-3 s as the ending.",
+      "Text: only the highlight message (over the first main shot and the final hold) plus 'Comment BUILD'. No step labels, no captions, no voiceover."
     ],
-    "voice": "Minimal: one hook line and one closing line only; let the music carry it. Never over 12 words for 15s.",
-    "pace": "Slow, smooth moves, 2-3.5s per shot, soft fades.",
-    "files": {"15": "showcase-15s.json", "30": "showcase-30s.json"}
+    "voice": "None: music only, like the reference.",
+    "pace": "Very fast and rhythmic: flash teaser at 1/2 beat per shot, then 1.5-2 beats per shot; nearly static camera (tiny push-ins), hard cuts.",
+    "music": "Upbeat pop / house / funk track around 95-125 bpm.",
+    "reference": "data/others_video_reference/vibe.mp4",
+    "files": {
+      "15": "showcase-15s.json",
+      "30": "showcase-30s.json"
+    }
   },
   "drone": {
     "label": "Drone + process",
@@ -45,7 +55,10 @@
     ],
     "voice": "Few lines, big claims only if the user gave them (on time, on budget). About 2 words per second.",
     "pace": "Keep drone clips moving: real clips over stills, 2-3s each, use speed 1.5-2 for slow orbits.",
-    "files": {"15": "drone-15s.json", "30": "drone-30s.json"}
+    "files": {
+      "15": "drone-15s.json",
+      "30": "drone-30s.json"
+    }
   },
   "walkthrough": {
     "label": "Walk-through with narrative",
@@ -61,6 +74,9 @@
     ],
     "voice": "A guided story in second person ('step inside...'), one line per room or two, about 2.3 words per second.",
     "pace": "Steady, 2-3s per shot, moves that follow the walking direction.",
-    "files": {"15": "walkthrough-15s.json", "30": "walkthrough-30s.json"}
+    "files": {
+      "15": "walkthrough-15s.json",
+      "30": "walkthrough-30s.json"
+    }
   }
 }

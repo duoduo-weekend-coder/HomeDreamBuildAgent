@@ -402,7 +402,10 @@ def template_brief(kind: str, lengths: list[int]) -> str:
     story = "\n".join(f"  {i}. {line}" for i, line in enumerate(t["story"], 1))
     return (f"Template \"{t['label']}\" ({kind}): {t['goal']}\n"
             f"Start from: {files}\nMedia to use: {t['media']}\nStory:\n{story}\n"
-            f"Voiceover: {t['voice']}\nPace: {t['pace']}")
+            f"Voiceover: {t['voice']}\nPace: {t['pace']}"
+            + (f"\nMusic (required): {t['music'].rstrip('.')}. Use a matching track from assets/music/ and set \"music\" to it; "
+               "if none fits or the folder is empty, render without music and say so in the summary." if t.get("music") else "")
+            + (f"\nStyle reference: {t['reference']} (summarised in docs/reference-styles.md)." if t.get("reference") else ""))
 
 
 def highlight_rule(highlight: str) -> str:
@@ -410,7 +413,7 @@ def highlight_rule(highlight: str) -> str:
         return "No highlight message was given: leave info.highlight empty."
     return f"""Highlight message from the user (MUST appear in every video): "{highlight}"
 - Put it in info.highlight exactly as written; the templates show it as the hook title and on the end card.
-- Weave its meaning into the narration too, without adding claims the user didn't make.
+- If the template has narration, weave its meaning into it too, without adding claims the user didn't make.
 - After rendering, check a frame shows the message in full (not cut off) and mention that in the summary."""
 
 

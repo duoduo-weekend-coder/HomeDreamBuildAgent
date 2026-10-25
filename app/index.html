@@ -149,8 +149,8 @@ let TEMPLATES = {};
 const KIND = new Proxy({ overview: "Overview" }, { get: (o, k) => TEMPLATES[k]?.label || o[k] || k });
 // One-line story flow per template, shown on its card.
 const FLOW = {
-  build: "Finished flash → site → foundation → framing → roof → siding → reveal",
-  showcase: "Best shot + message → 5–8 hero shots → best view last",
+  build: "Site sign → framing walk → finished details → wide rooms → exterior hold",
+  showcase: "Flash teaser → fast cuts on the beat → same angle, new light → calm wide last",
   drone: "“This was dirt” → aerials in date order → “This is the finish”",
   walkthrough: "Exterior → entry → living → kitchen → suite → best room last",
 };

@@ -13,62 +13,130 @@
     "provider": "auto"
   },
   "music": null,
+  "_music": "Upbeat pop / house / funk, 95-125 bpm (see catalog.json)",
+  "beat_sync": true,
+  "captions": false,
+  "style": {
+    "transition": "cut",
+    "music_volume": 0.9,
+    "fit": "cover"
+  },
   "shots": [
     {
-      "source": "media/showcase/hero.jpg",
-      "duration": 3.2,
+      "source": "media/showcase/hero-1.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-2.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-3.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-4.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-5.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-1.jpg",
+      "beats": 2.5,
+      "duration": 1.75,
       "motion": "zoom_in",
-      "layout": "center",
+      "motion_amount": 0.04,
       "title": [
         "{highlight}",
-        "{specs}"
+        "{home_name}"
       ],
-      "subtitle": [
-        "{location}"
-      ],
-      "narration": [
-        "{highlight}.",
-        "Welcome to {home_name}.",
-        "Welcome home."
-      ]
+      "layout": "center"
     },
     {
       "source": "media/showcase/living.jpg",
-      "duration": 2.5,
-      "motion": "pan_right",
-      "title": "Light"
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
     },
     {
       "source": "media/showcase/kitchen.jpg",
-      "duration": 2.5,
+      "beats": 2,
+      "duration": 1.4,
       "motion": "zoom_in",
-      "title": "Gather"
+      "motion_amount": 0.04
     },
     {
-      "source": "media/showcase/detail.jpg",
-      "duration": 2.0,
-      "motion": "pan_up"
+      "source": "media/showcase/dining.jpg",
+      "beats": 1.5,
+      "duration": 1.05,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
     },
     {
-      "source": "media/showcase/best-view.jpg",
-      "duration": 3.0,
+      "source": "media/showcase/hero-2.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/bedroom.jpg",
+      "beats": 1.5,
+      "duration": 1.05,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/outdoor.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/hero-1-other-light.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04,
+      "note": "same angle as hero-1"
+    },
+    {
+      "source": "media/showcase/detail-styled.jpg",
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/calm-wide.jpg",
+      "duration": 2.6,
       "motion": "zoom_out",
-      "title": "Stay"
-    },
-    {
-      "source": "card",
-      "duration": 3.0,
-      "layout": "center",
+      "motion_amount": 0.04,
       "title": [
         "{highlight}",
         "{home_name}",
         "Built with care"
       ],
-      "subtitle": [
-        "{builder}",
-        "{location}"
-      ],
-      "kicker": "Comment BUILD"
+      "subtitle": "Comment BUILD",
+      "layout": "center"
     }
   ]
 }

@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from make_video import (  # noqa: E402
-    DEFAULT_STYLE, IMAGE_EXTS, apply_info, find_file, fit_durations, media_duration, shot_starts,
+    DEFAULT_STYLE, IMAGE_EXTS, apply_info, find_file, media_duration, timeline,
 )
 
 SCHEMA_VERSION = 1
@@ -60,9 +60,7 @@ def build(storyboard_path: Path, output: Path, aspect: str | None = None) -> dic
     apply_info(shots, info)
     style = {**DEFAULT_STYLE, **sb.get("style", {})}
     total = float(sb["duration"])
-    T = float(style["transition_duration"])
-    durs = fit_durations(shots, total, T)
-    starts = shot_starts(durs, T)
+    durs, starts, *_ = timeline(sb, shots, style, storyboard_path.parent)
     aspect = aspect or sb.get("aspect", "16:9")
 
     job_dir = output.parent.parent if output.parent.name == "output" else output.parent

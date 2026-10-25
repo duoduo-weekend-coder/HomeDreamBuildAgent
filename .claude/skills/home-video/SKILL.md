@@ -9,12 +9,12 @@ Turns a folder of photos and clips into a finished 15s or 30s video using one of
 
 | Template (`kind`) | Story | Storyboards |
 |---|---|---|
-| **1. Building process** (`build`) | Flash of the finished home, then construction in date order (site → foundation → framing → roof → siding → finishes) with "Step N" kickers, then the reveal | `build-15s.json`, `build-30s.json` |
-| **2. Vibe final show** (`showcase`) | The finished home's best 5–8 shots, slow moves, music-led, one-word titles, best view last; barely any narration | `showcase-15s.json`, `showcase-30s.json` |
+| **1. Process + final** (`build`) | Music-only: brand/site hook, a quick construction act (~15%), then the finished home in details and wide rooms cut every 2 beats (~70%), ending on exterior and outdoor living | `build-15s.json`, `build-30s.json` |
+| **2. Vibe final show** (`showcase`) | Music-only mood reel: a 5-cut flash teaser, then a fast cut every 1.5–2 beats, one hero angle revisited in different light, ending on a styled detail and a calm wide room | `showcase-15s.json`, `showcase-30s.json` |
 | **3. Drone + process** (`drone`) | "This was dirt." on the earliest aerial, then drone clips in date order, then "This is the finish." | `drone-15s.json`, `drone-30s.json` |
 | **4. Walk-through with narrative** (`walkthrough`) | Narrated tour in walking order (exterior → entry → living → kitchen → suite → …), best room last | `walkthrough-15s.json`, `walkthrough-30s.json` |
 
-Every template ends on a card with `Comment BUILD`. **Highlight message:** when the user gives one, put it in `info.highlight` exactly as written. The templates show it as the hook title and on the end card (long text wraps automatically); also work it into the narration. `overview-*.json` is the older room-tour storyboard, kept for reference.
+Templates 1 and 2 copy the reference reels described in `docs/reference-styles.md`: hard cuts on the beat, full-frame photos, music only, and `music` must be set (pick a track in `assets/music/`). Every template ends with `Comment BUILD`. **Highlight message:** when the user gives one, put it in `info.highlight` exactly as written. The templates show it as the hook title and on the end card (long text wraps automatically); also work it into the narration. `overview-*.json` is the older room-tour storyboard, kept for reference.
 
 `scripts/make_video.py` renders a storyboard JSON into an MP4 that is exactly the storyboard's `duration`.
 
@@ -59,7 +59,7 @@ Use `--placeholders` to preview a storyboard before all the media exists. Missin
 
 ## Storyboard fields
 
-Top level: `duration` (seconds), `aspect` (`16:9` `9:16` `1:1` `4:5`), `info` (optional home details, used by `{placeholders}`), `voice`, `music` (path or null), optional `style`. `captions` (default `true`): burn in the narration word by word (max 3 words per caption, synced to ElevenLabs word timings, estimated for other voices). Text is white Montserrat ExtraBold with a soft shadow; with captions on, titles move to the top of the frame.
+Top level: `duration` (seconds), `aspect` (`16:9` `9:16` `1:1` `4:5`), `info` (optional home details, used by `{placeholders}`), `voice`, `music` (path or null), optional `style`. `beat_sync` (with `music`: detect the tempo and cut on the beat; `bpm`/`beat_offset` override detection), `captions` (default `true`): burn in the narration word by word (max 3 words per caption, synced to ElevenLabs word timings, estimated for other voices). Text is white Montserrat ExtraBold with a soft shadow; with captions on, titles move to the top of the frame.
 
 Per shot:
 
@@ -76,12 +76,13 @@ Per shot:
 | `transition` | ffmpeg xfade name for the cut into this shot (`fade`, `smoothleft`, `circleopen`…) |
 | `ai_prompt` | With `--ai`: turn this photo into a short AI video clip (see below) |
 | `color` | Background colour for a `card` |
+| `beats` | With `beat_sync`: the shot lasts this many beats of the music (e.g. `2`, or `0.5` for a flash cut), so cuts land on the beat. Leave it off the final holds; they stretch to fill the length |
 | `straighten` | Photos only, default `true`: level the horizon and make verticals plumb (tilt + keystone fitted from vertical edges, one perspective warp, then crop) |
 | `fit` | Photos only: `auto` (default), `cover` (fill and crop) or `contain` (whole photo on a blurred copy of itself; `auto` picks it for e.g. landscape photos in 9:16) |
 | `crop` | Photos only: `[l, t, r, b]` box to keep, in fractions of the original photo, e.g. to cut out a road sign |
 | `blur` | Photos only: list of `[l, t, r, b]` boxes to blur, e.g. house numbers. Applied first, so the privacy edit is never skipped |
 
-`style` overrides: `font`, `text_color`, `accent_color`, `card_color`, `transition`, `transition_duration`, `music_volume`.
+`style` overrides: `font`, `text_color`, `accent_color`, `card_color`, `transition` (an xfade name, or `cut` for hard cuts), `transition_duration`, `music_volume` (use ~0.9 for music-only reels), `fit` (default framing for every photo, e.g. `cover` for full-bleed reels).
 
 ## Voice
 

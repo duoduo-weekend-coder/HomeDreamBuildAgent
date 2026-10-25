@@ -13,85 +13,194 @@
     "provider": "auto"
   },
   "music": null,
+  "_music": "Upbeat pop / house / funk, 95-125 bpm (see catalog.json)",
+  "beat_sync": true,
+  "captions": false,
+  "style": {
+    "transition": "cut",
+    "music_volume": 0.9,
+    "fit": "cover"
+  },
   "shots": [
     {
-      "source": "media/showcase/hero.jpg",
-      "duration": 3.5,
-      "motion": "zoom_in",
-      "layout": "center",
-      "title": [
-        "{highlight}",
-        "{specs}"
-      ],
-      "subtitle": [
-        "{location}"
-      ],
-      "narration": [
-        "{highlight}.",
-        "Welcome to {home_name}.",
-        "Welcome home."
-      ]
+      "source": "media/showcase/hero-1.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
     },
     {
-      "source": "media/showcase/exterior.jpg",
-      "duration": 3.0,
-      "motion": "pan_right"
+      "source": "media/showcase/hero-2.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-3.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-4.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-5.jpg",
+      "beats": 0.5,
+      "duration": 0.35,
+      "motion": "none",
+      "note": "same file as a later shot"
+    },
+    {
+      "source": "media/showcase/hero-1.jpg",
+      "beats": 2.5,
+      "duration": 1.75,
+      "motion": "zoom_in",
+      "motion_amount": 0.04,
+      "title": [
+        "{highlight}",
+        "{home_name}"
+      ],
+      "layout": "center"
     },
     {
       "source": "media/showcase/living.jpg",
-      "duration": 3.0,
+      "beats": 2,
+      "duration": 1.4,
       "motion": "zoom_in",
-      "title": "Light"
-    },
-    {
-      "source": "media/showcase/detail-1.jpg",
-      "duration": 2.5,
-      "motion": "pan_left"
+      "motion_amount": 0.04
     },
     {
       "source": "media/showcase/kitchen.jpg",
-      "duration": 3.0,
+      "beats": 2,
+      "duration": 1.4,
       "motion": "pan_right",
-      "title": "Gather"
+      "motion_amount": 0.04
     },
     {
-      "source": "media/showcase/primary.jpg",
-      "duration": 3.0,
+      "source": "media/showcase/dining.jpg",
+      "beats": 1.5,
+      "duration": 1.05,
       "motion": "zoom_in",
-      "title": "Rest"
+      "motion_amount": 0.04
     },
     {
-      "source": "media/showcase/detail-2.jpg",
-      "duration": 2.5,
-      "motion": "pan_up"
+      "source": "media/showcase/hero-2.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_out",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/entry.jpg",
+      "beats": 1.5,
+      "duration": 1.05,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/stairs.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "pan_up",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/bedroom.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/bath.jpg",
+      "beats": 1.5,
+      "duration": 1.05,
+      "motion": "pan_left",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/hero-3.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/detail-1.jpg",
+      "beats": 1.5,
+      "duration": 1.05,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/lower-level.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "pan_right",
+      "motion_amount": 0.04
     },
     {
       "source": "media/showcase/outdoor.jpg",
-      "duration": 3.0,
-      "motion": "pan_left",
-      "title": "Unwind"
-    },
-    {
-      "source": "media/showcase/best-view.jpg",
-      "duration": 3.5,
+      "beats": 2,
+      "duration": 1.4,
       "motion": "zoom_out",
-      "title": "Stay",
-      "narration": "Built to be lived in."
+      "motion_amount": 0.04
     },
     {
-      "source": "card",
-      "duration": 4.0,
-      "layout": "center",
+      "source": "media/showcase/kitchen-detail.jpg",
+      "beats": 1.5,
+      "duration": 1.05,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/hero-2-other-light",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04,
+      "note": "same angle as hero-2).jpg"
+    },
+    {
+      "source": "media/showcase/view.jpg",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_out",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/hero-1-other-light",
+      "beats": 2,
+      "duration": 1.4,
+      "motion": "zoom_in",
+      "motion_amount": 0.04,
+      "note": "same angle as hero-1).jpg"
+    },
+    {
+      "source": "media/showcase/detail-styled.jpg",
+      "duration": 1.6,
+      "motion": "zoom_in",
+      "motion_amount": 0.04
+    },
+    {
+      "source": "media/showcase/calm-wide.jpg",
+      "duration": 3.0,
+      "motion": "zoom_out",
+      "motion_amount": 0.04,
       "title": [
         "{highlight}",
         "{home_name}",
         "Built with care"
       ],
-      "subtitle": [
-        "{builder}",
-        "{location}"
-      ],
-      "kicker": "Comment BUILD"
+      "subtitle": "Comment BUILD",
+      "layout": "center"
     }
   ]
 }

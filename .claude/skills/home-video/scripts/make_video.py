@@ -427,23 +427,122 @@ def render_shot(shot: dict, idx: int, dur: float, W: int, H: int, work: Path, st
 # ---------------------------------------------------------------- assembly
 
 
-def fit_durations(shots: list[dict], target: float, T: float) -> list[float]:
-    durs = [float(s.get("duration", 3)) for s in shots]
-    needed = target + T * (len(durs) - 1)
+def overlaps(shots: list[dict], style: dict, T: float) -> list[float]:
+    """Seconds each shot overlaps the one before it: T for a cross-fade, 0 for a hard cut ("transition": "cut")."""
+    return [0.0] + [0.0 if shots[k].get("transition", style["transition"]) == "cut" else T for k in range(1, len(shots))]
+
+
+def music_beat(path: Path) -> tuple[float, float]:
+    """(beat period, first-beat offset) in seconds, from the music's onset strength (spectral flux autocorrelation)."""
+    import numpy as np
+
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-t", "60", "-i", str(path), "-ac", "1", "-ar", "22050", "-f", "s16le", "-"],
+                         capture_output=True, check=True).stdout
+    x = np.frombuffer(raw, np.int16).astype(np.float32) / 32768
+    hop, n = 512, 2048
+    frames = np.lib.stride_tricks.sliding_window_view(x, n)[::hop] * np.hanning(n)
+    rise = np.maximum(0, np.diff(np.log1p(np.abs(np.fft.rfft(frames, axis=1))), axis=0))
+    def norm(f):
+        return (f - f.mean()) / (f.std() + 1e-9)
+    low = int(250 * n / 22050)  # kick drum band: cuts belong on the downbeat, not the hi-hat
+    flux = norm(rise.sum(1)) + 2 * norm(rise[:, 1:low].sum(1))
+    rate = 22050 / hop
+    ac = np.correlate(flux, flux, "full")[len(flux) - 1:]
+    lags = np.arange(len(ac)) / rate
+    window = (lags > 60 / 180) & (lags < 60 / 70)  # 70-180 bpm
+    rough = float(lags[window][np.argmax(ac[window])])
+    # Refine: the period and phase whose beat grid lands on the most onset energy over the whole excerpt.
+    # Frame i covers samples [i*hop, i*hop+n); its flux rises when an onset enters the window's centre.
+    times = np.arange(len(flux)) * hop / 22050 + (n / 2 + hop) / 22050
+    best = (-1e9, rough, 0.0)
+    for period in np.arange(rough * 0.97, rough * 1.03, 0.0005):
+        beats = np.arange(0, times[-1] - period, period)
+        for phase in np.arange(0, period, 0.005):
+            score = np.interp(beats + phase, times, flux).sum()
+            if score > best[0]:
+                best = (score, float(period), float(phase))
+    return best[1], best[2]
+
+
+def fit_durations(shots: list[dict], target: float, ov: list[float], beat: float | None = None) -> list[float]:
+    """Shot lengths that make the video exactly `target` seconds. With a beat, shots that give "beats" keep that many
+    beats (so hard cuts land on the music) and the others stretch to fill the rest; put those at the end."""
+    locked = [bool(beat and s.get("beats")) for s in shots]
+    durs = [float(s["beats"]) * beat if lock else float(s.get("duration", 3)) for s, lock in zip(shots, locked)]
+    needed = target + sum(ov)
+    if any(locked):
+        # The track's tempo isn't known when the storyboard is written, so add or remove half-beats on the
+        # longest (or shortest) locked shots until the unlocked shots land between 0.6x and 2x their planned length.
+        free_plan = sum(d for d, lock in zip(durs, locked) if not lock)
+        lo, hi = (0.6 * free_plan, 2 * free_plan) if free_plan else (0.0, 0.0)
+        for _ in range(200):
+            room = needed - sum(d for d, lock in zip(durs, locked) if lock)
+            if room < lo:
+                k = max((i for i in range(len(durs)) if locked[i] and durs[i] > 0.9 * beat), key=lambda i: durs[i], default=None)
+                step = -0.5 * beat
+            elif room > hi + (0.5 * beat if not free_plan else 0):
+                k = min((i for i in range(len(durs)) if locked[i]), key=lambda i: durs[i], default=None)
+                step = 0.5 * beat
+            else:
+                break
+            if k is None:
+                break
+            durs[k] += step
+        if not free_plan:  # everything is locked: the last shot takes up the remainder
+            durs[-1] += needed - sum(durs)
     if abs(sum(durs) - needed) > 0.01:
-        scale = needed / sum(durs)
-        print(f"note: scaling shot lengths by {scale:.3f} so the video is exactly {target:g}s")
-        durs = [d * scale for d in durs]
-    if min(durs) < 2 * T + 0.5:
-        raise ValueError(f"A shot is only {min(durs):.2f}s long; use fewer shots or a shorter transition")
+        fixed = sum(d for d, lock in zip(durs, locked) if lock)
+        free = sum(durs) - fixed
+        if free > 0 and needed - fixed >= 0.4 * free:
+            scale = (needed - fixed) / free
+            durs = [d if lock else d * scale for d, lock in zip(durs, locked)]
+            if any(locked):
+                print(f"note: {sum(locked)} shots locked to the beat ({beat:.3f}s); scaling the rest by {scale:.3f}")
+        else:
+            scale = needed / sum(durs)
+            durs = [d * scale for d in durs]
+            if any(locked):
+                print(f"warning: the beat-locked shots don't fit {target:g}s, so cuts may drift off the beat")
+        if not any(locked):
+            print(f"note: scaling shot lengths by {scale:.3f} so the video is exactly {target:g}s")
+    free_idx = [i for i, lock in enumerate(locked) if not lock]
+    if any(locked) and len(free_idx) > 1:
+        # Keep the stretched shots on the beat too: whole half-beats each, the last one takes the remainder.
+        half = beat / 2
+        for i in free_idx[:-1]:
+            durs[i] = max(2 * half, round(durs[i] / half) * half)
+        durs[free_idx[-1]] += needed - sum(durs)
+    for k, d in enumerate(durs):
+        out = ov[k + 1] if k + 1 < len(ov) else 0.0
+        if d < ov[k] + out + (0.5 if ov[k] or out else 0.2):
+            raise ValueError(f"Shot {k + 1} is only {d:.2f}s long; use fewer shots, hard cuts, or a shorter transition")
     return durs
 
 
-def shot_starts(durs: list[float], T: float) -> list[float]:
+def timeline(sb: dict, shots: list[dict], style: dict, sb_dir: Path, verbose: bool = False):
+    """(durations, starts, overlaps, music path, music start offset) for a storyboard; shared with video_metadata.py."""
+    total, T = float(sb["duration"]), float(style["transition_duration"])
+    ov = overlaps(shots, style, T)
+    music = find_file(sb["music"], sb_dir) if sb.get("music") else None
+    if sb.get("music") and music is None:
+        raise FileNotFoundError(f"Music file not found: {sb['music']}")
+    beat, beat_offset = None, 0.0
+    if music and sb.get("beat_sync"):
+        if sb.get("bpm"):
+            beat, beat_offset = 60 / float(sb["bpm"]), float(sb.get("beat_offset", 0))
+        else:
+            beat, beat_offset = music_beat(music)
+        if verbose:
+            print(f"music: {60 / beat:.0f} bpm, first beat at {beat_offset:.2f}s; cutting on the beat")
+    durs = fit_durations(shots, total, ov, beat)
+    return durs, shot_starts(durs, ov), ov, music, beat_offset
+
+
+def shot_starts(durs: list[float], ov: list[float]) -> list[float]:
     starts, t = [], 0.0
-    for d in durs:
+    for k, d in enumerate(durs):
         starts.append(t)
-        t += d - T
+        t += d - (ov[k + 1] if k + 1 < len(ov) else 0.0)
     return starts
 
 
@@ -517,6 +616,9 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
     T = float(style["transition_duration"])
     shots = sb["shots"]
     apply_info(shots, sb.get("info", {}))
+    for shot in shots:  # a storyboard-wide photo framing default, e.g. "cover" for full-bleed reels
+        if style.get("fit"):
+            shot.setdefault("fit", style["fit"])
     sb_dir = storyboard_path.parent
     output = output or Path("output") / f"{storyboard_path.stem}{'' if aspect == '16:9' else '-' + aspect.replace(':', 'x')}.mp4"
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -553,8 +655,7 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
                     generate_clip(shot["ai_prompt"], str(src), str(clip), aspect)
                 sources[i] = clip
 
-    durs = fit_durations(shots, total, T)
-    starts = shot_starts(durs, T)
+    durs, starts, ov, music, beat_offset = timeline(sb, shots, style, sb_dir, verbose=True)
     voice_cfg = sb.get("voice", {})
     provider = tts_provider(voice_cfg.get("provider", "auto"))
     voice = voice_cfg.get("voice") if voice_cfg.get("provider", "auto") != "auto" else None
@@ -573,9 +674,12 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
             cmd += ["-i", str(seg)]
         graph, last, length = [], "[0:v]", durs[0]
         for k in range(1, len(segments)):
-            transition = shots[k].get("transition", style["transition"])
-            graph.append(f"{last}[{k}:v]xfade=transition={transition}:duration={T}:offset={length - T:.3f}[v{k}]")
-            last, length = f"[v{k}]", length + durs[k] - T
+            if ov[k] == 0:  # hard cut
+                graph.append(f"{last}[{k}:v]concat=n=2:v=1:a=0[v{k}]")
+            else:
+                transition = shots[k].get("transition", style["transition"])
+                graph.append(f"{last}[{k}:v]xfade=transition={transition}:duration={ov[k]}:offset={length - ov[k]:.3f}[v{k}]")
+            last, length = f"[v{k}]", length + durs[k] - ov[k]
         if captions:
             # Burned-in captions synced to the voiceover (most viewers watch muted).
             graph += shadowed_text(last, caption_texts(captions, W, H, work, style), W, H, total, "[capt]")
@@ -590,16 +694,13 @@ def render(storyboard_path: Path, aspect: str | None, output: Path | None, use_a
             graph.append(f"[{n_in}:a]aformat=sample_rates=48000:channel_layouts=stereo,atempo={tempo:.3f},adelay={ms}:all=1[n{k}]")
             voice_labels.append(f"[n{k}]")
             n_in += 1
-        music = find_file(sb["music"], sb_dir) if sb.get("music") else None
-        if sb.get("music") and music is None:
-            raise FileNotFoundError(f"Music file not found: {sb['music']}")
-
         if voice_labels:
             graph.append(f"{''.join(voice_labels)}amix=inputs={len(voice_labels)}:normalize=0,apad[voice]")
         if music:
             cmd += ["-stream_loop", "-1", "-i", str(music)]
             graph.append(
-                f"[{n_in}:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim=0:{total},volume={style['music_volume']},"
+                f"[{n_in}:a]aformat=sample_rates=48000:channel_layouts=stereo,atrim={beat_offset:.3f}:{beat_offset + total:.3f},"
+                f"asetpts=PTS-STARTPTS,volume={style['music_volume']},"
                 f"afade=t=in:d=1,afade=t=out:st={total - 1.5}:d=1.5[mus]"
             )
             n_in += 1
