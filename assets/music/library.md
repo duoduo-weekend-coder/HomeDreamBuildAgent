@@ -3,6 +3,8 @@
 Written by `music_library.py`. `starts` = where the music begins for each template and length (seconds).
 Check each track's license before publishing (`license` field; fill it in by hand).
 
+Recommended per template: build: sergepavkinmusic-breath-of-spring-197692.mp3, showcase: Chase The Sun - Bel Tempo.mp3, walkthrough: aurosonmusic-inspiring-pop-motion-upbeat-background-music-577738.mp3, drone: aurosonmusic-inspiring-pop-motion-upbeat-background-music-577738.mp3
+
 | Track | bpm | tone | energy | suits | license | build 15/30 | showcase 15/30 |
 |---|---|---|---|---|---|---|---|
 | Chase The Sun - Bel Tempo.mp3 | 137.0 | balanced | varied | showcase | unknown: check before publishing | 136.86 / 133.36 | 140.37 / 140.37 |

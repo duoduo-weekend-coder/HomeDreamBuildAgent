@@ -103,6 +103,33 @@ def analyse(path: Path) -> dict:
             "brightness_hz": round(brightness), "tone": tone, "energy": shape, "suits": suits, "starts": starts}
 
 
+def names(file_name: str) -> tuple[str, str]:
+    """Display title and artist from "Title - Artist.mp3" or Pixabay's "artist-title-words-123456.mp3"."""
+    stem = Path(file_name).stem
+    if " - " in stem:
+        title, artist = stem.split(" - ", 1)
+        return title.strip(), artist.strip()
+    words = stem.split("-")
+    if len(words) > 2 and words[-1].isdigit():
+        return " ".join(words[1:-1]).capitalize(), words[0]
+    return stem, ""
+
+
+# Tempo each template is cut to (see templates/catalog.json); the default track is the closest licensed match.
+TARGET_BPM = {"build": 80, "showcase": 130, "walkthrough": 100, "drone": 100}
+
+
+def pick_defaults(tracks: dict) -> dict:
+    """Recommended track per template: suits the template, known license first, then closest to the target tempo."""
+    defaults = {}
+    for kind, bpm in TARGET_BPM.items():
+        fits = [n for n, t in tracks.items() if kind in t.get("suits", [])]
+        if fits:
+            known = lambda n: not str(tracks[n].get("license", "unknown")).startswith("unknown")
+            defaults[kind] = min(fits, key=lambda n: (not known(n), abs(tracks[n]["bpm"] - bpm)))
+    return defaults
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("folder", type=Path)
@@ -117,13 +144,16 @@ def main() -> None:
         if args.into and (not target.exists() or target.stat().st_size != src.stat().st_size):
             shutil.copy2(src, target)
         info = analyse(target)
-        lib["tracks"][src.name] = {**lib["tracks"].get(src.name, {}), **info}
+        title, artist = names(src.name)
+        lib["tracks"][src.name] = {"title": title, "artist": artist, **lib["tracks"].get(src.name, {}), **info}
         print(f"{src.name[:50]:50s} {info['bpm']:6.1f} bpm  {info['tone']:8s} {info['energy']:7s} suits {', '.join(info['suits'])}")
+    lib["defaults"] = pick_defaults(lib["tracks"])
     lib["generated"] = date.today().isoformat()
     lib_path.write_text(json.dumps(lib, indent=2) + "\n")
     rows = ["# Music library", "",
             "Written by `music_library.py`. `starts` = where the music begins for each template and length (seconds).",
             "Check each track's license before publishing (`license` field; fill it in by hand).", "",
+            "Recommended per template: " + ", ".join(f"{k}: {v}" for k, v in lib["defaults"].items()), "",
             "| Track | bpm | tone | energy | suits | license | build 15/30 | showcase 15/30 |", "|---|---|---|---|---|---|---|---|"]
     for name, t in lib["tracks"].items():
         b, s = t["starts"].get("build", {}), t["starts"].get("showcase", {})

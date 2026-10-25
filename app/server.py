@@ -43,6 +43,22 @@ ALLOWED_TOOLS = [
 # The 4 video templates the customer picks from; defined once in the skill and shared with the web page.
 TEMPLATES = json.loads((ROOT / ".claude/skills/home-video/templates/catalog.json").read_text())
 KINDS = {k: t["label"] for k, t in TEMPLATES.items()} | {"overview": "Overview (older jobs)"}
+MUSIC_DIR = ROOT / "assets/music"
+
+
+def music_library() -> dict:
+    """Tracks in assets/music that are on this Mac (from library.json, see music_library.py) and the
+    recommended track per template."""
+    try:
+        lib = json.loads((MUSIC_DIR / "library.json").read_text())
+    except (OSError, ValueError):
+        return {"tracks": [], "defaults": {}}
+    tracks = [{"file": name, "title": t.get("title", name), "artist": t.get("artist", ""), "bpm": t.get("bpm"),
+               "tone": t.get("tone", ""), "energy": t.get("energy", ""), "suits": t.get("suits", []),
+               "license": t.get("license", "unknown"), "starts": t.get("starts", {})}
+              for name, t in lib.get("tracks", {}).items() if (MUSIC_DIR / name).exists()]
+    files = {t["file"] for t in tracks}
+    return {"tracks": tracks, "defaults": {k: v for k, v in lib.get("defaults", {}).items() if v in files}}
 ASPECTS = {"16:9": "16x9", "9:16": "9x16", "1:1": "1x1", "4:5": "4x5"}
 VOICES = {"edge", "elevenlabs", "openai", "say", "auto"}
 
@@ -237,7 +253,7 @@ similar_shots.py on it (reuse {media}/.index/scenes.json if it exists)."""
         for length in r["lengths"]:
             for aspect in r["aspects"]:
                 videos.append(f"- {KINDS[kind]}, {length}s, {aspect} -> jobs/{job.id}/output/{kind}-{length}s-{ASPECTS[aspect]}.mp4")
-    template_text = "\n\n".join(template_brief(k, r["lengths"]) for k in r["kinds"] if k in TEMPLATES)
+    template_text = "\n\n".join(template_brief(k, r["lengths"], r.get("music", "auto")) for k in r["kinds"] if k in TEMPLATES)
     highlight = r.get("highlight", "").strip()
 
     info = {k: v.strip() for k, v in r.get("info", {}).items() if v and v.strip()}
@@ -396,16 +412,28 @@ def worker() -> None:
 # ---------------------------------------------------------------- HTTP
 
 
-def template_brief(kind: str, lengths: list[int]) -> str:
+def music_line(kind: str, choice: str) -> str:
+    """Prompt line naming the track for this template: the user's pick, none, or the template's recommended track."""
+    if choice == "none":
+        return '\nMusic: none, the user chose no music. Set "music": null.'
+    track = music_library()["defaults"].get(kind) if choice == "auto" else choice
+    if track:
+        who = "the user's choice" if choice != "auto" else "this template's recommended track"
+        return (f'\nMusic: set "music": "assets/music/{track}" ({who}). Leave out music_start; the renderer starts '
+                "at the track's best excerpt.")
+    if TEMPLATES[kind].get("music"):
+        return f"\nMusic: no track in assets/music suits this template ({TEMPLATES[kind]['music']}); render without music and say so."
+    return ""
+
+
+def template_brief(kind: str, lengths: list[int], music: str = "auto") -> str:
     t = TEMPLATES[kind]
     files = ", ".join(f".claude/skills/home-video/templates/{t['files'][str(n)]}" for n in lengths)
     story = "\n".join(f"  {i}. {line}" for i, line in enumerate(t["story"], 1))
     return (f"Template \"{t['label']}\" ({kind}): {t['goal']}\n"
             f"Start from: {files}\nMedia to use: {t['media']}\nStory:\n{story}\n"
             f"Voiceover: {t['voice']}\nPace: {t['pace']}"
-            + (f"\nMusic (required): {t['music'].rstrip('.')}. Pick a track from assets/music/library.md that lists this template under 'suits' and set \"music\" to it "
-               "(leave out music_start: the renderer starts at the track's best excerpt); "
-               "if none fits or the folder is empty, render without music and say so in the summary." if t.get("music") else "")
+            + music_line(kind, music)
             + (f"\nStyle reference: {t['reference']} (summarised in docs/reference-styles.md)." if t.get("reference") else ""))
 
 
@@ -439,8 +467,11 @@ def validate(body: dict) -> dict:
         raise ValueError("Pick at least one template, length and format.")
     voice = body.get("voice", "edge") if body.get("voice") in VOICES else "edge"
     info = {k: str(body.get("info", {}).get(k, ""))[:120] for k in ("home_name", "location", "specs", "builder")}
+    music = str(body.get("music", "auto"))
+    if music not in ("auto", "none") and music not in {t["file"] for t in music_library()["tracks"]}:
+        raise ValueError("That music track isn't in assets/music.")
     return {"source": source, "kinds": kinds, "lengths": lengths, "aspects": aspects, "voice": voice,
-            "info": info, "highlight": str(body.get("highlight", "")).strip()[:120],
+            "info": info, "highlight": str(body.get("highlight", "")).strip()[:120], "music": music,
             "notes": str(body.get("notes", ""))[:2000]}
 
 
@@ -480,6 +511,13 @@ class Handler(BaseHTTPRequestHandler):
                                    "outputs": job.outputs(), "summary": job.summary()})
         if parts == ["api", "templates"]:
             return self.send_json(TEMPLATES)
+        if parts == ["api", "music"]:
+            return self.send_json(music_library())
+        if parts[:3] == ["api", "music", "file"] and len(parts) == 4:
+            name = unquote(parts[3])  # only tracks listed in the library, so no path tricks
+            if name not in {t["file"] for t in music_library()["tracks"]}:
+                return self.send_json({"error": "No such track"}, 404)
+            return self.send_file(MUSIC_DIR / name)
         if parts == ["api", "settings"]:
             env = read_env_file()
             return self.send_json({"elevenlabs_configured": bool(env.get("ELEVENLABS_API_KEY")),

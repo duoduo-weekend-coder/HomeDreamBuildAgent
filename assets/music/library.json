@@ -1,6 +1,8 @@
 {
   "tracks": {
     "Chase The Sun - Bel Tempo.mp3": {
+      "title": "Chase The Sun",
+      "artist": "Bel Tempo",
       "duration": 203.0,
       "bpm": 137.0,
       "loudness_db": -11.7,
@@ -27,6 +29,8 @@
       "license": "unknown: check before publishing"
     },
     "Doghouse - Blue Deer Studio.mp3": {
+      "title": "Doghouse",
+      "artist": "Blue Deer Studio",
       "duration": 211.5,
       "bpm": 95.0,
       "loudness_db": -11.8,
@@ -54,6 +58,8 @@
       "license": "unknown: check before publishing"
     },
     "Happy Tails - Blue Deer Studio.mp3": {
+      "title": "Happy Tails",
+      "artist": "Blue Deer Studio",
       "duration": 137.0,
       "bpm": 117.0,
       "loudness_db": -11.4,
@@ -82,6 +88,8 @@
       "license": "unknown: check before publishing"
     },
     "aurosonmusic-inspiring-pop-motion-upbeat-background-music-577738.mp3": {
+      "title": "Inspiring pop motion upbeat background music",
+      "artist": "aurosonmusic",
       "duration": 91.0,
       "bpm": 83.4,
       "loudness_db": -14.1,
@@ -110,6 +118,8 @@
       "source": "pixabay.com"
     },
     "sergepavkinmusic-breath-of-spring-197692.mp3": {
+      "title": "Breath of spring",
+      "artist": "sergepavkinmusic",
       "duration": 231.0,
       "bpm": 73.3,
       "loudness_db": -19.5,
@@ -137,5 +147,11 @@
       "source": "pixabay.com"
     }
   },
-  "generated": "2026-10-25"
+  "generated": "2026-10-25",
+  "defaults": {
+    "build": "sergepavkinmusic-breath-of-spring-197692.mp3",
+    "showcase": "Chase The Sun - Bel Tempo.mp3",
+    "walkthrough": "aurosonmusic-inspiring-pop-motion-upbeat-background-music-577738.mp3",
+    "drone": "aurosonmusic-inspiring-pop-motion-upbeat-background-music-577738.mp3"
+  }
 }

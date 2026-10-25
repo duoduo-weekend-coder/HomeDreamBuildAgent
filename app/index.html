@@ -55,6 +55,10 @@
   button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; width: 100%; padding: 12px; margin-top: 18px; }
   button:disabled { opacity: .5; cursor: default; }
   .hint { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .musicrow { display: flex; gap: 8px; align-items: center; }
+  .musicrow select { flex: 1; min-width: 0; }
+  .musicrow button { white-space: nowrap; }
+  .warnline { color: var(--warn); }
   .error { color: var(--warn); font-size: 14px; margin-top: 10px; }
   .jobs { display: flex; flex-direction: column; gap: 10px; }
   .job { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); cursor: pointer; }
@@ -228,6 +232,12 @@ function homeView() {
       </div>
       <div class="hint" id="count"></div>
 
+      <label for="music">Music</label>
+      <div class="musicrow">
+        <select id="music"></select>
+        <button type="button" class="ghost" id="musicPlay">▶ Preview</button>
+      </div>
+      <div class="hint" id="musicHint"></div>
       <label for="voice">Narrator</label>
       <select id="voice">
         <option value="elevenlabs" ${eleven ? "selected" : "disabled"}>ElevenLabs${eleven ? (settingsState.elevenlabs_voice_name ? " · " + esc(settingsState.elevenlabs_voice_name) : "") : " (add key in Voice settings)"}</option>
@@ -263,6 +273,11 @@ function homeView() {
   addMics(form);
   form.addEventListener("change", updateCount);
   updateCount();
+  const checked = k => [...form.querySelectorAll(`input[name=${k}]:checked`)].map(i => i.value);
+  fillMusic(checked("kinds"));
+  form.addEventListener("change", e => { if (e.target.name === "kinds") fillMusic(checked("kinds")); });
+  $("#music").addEventListener("change", () => musicHint(checked("kinds")));
+  $("#musicPlay").onclick = () => previewMusic(checked("kinds"), checked("lengths"));
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const pick = k => [...form.querySelectorAll(`input[name=${k}]:checked`)].map(i => i.value);
@@ -271,7 +286,7 @@ function homeView() {
     try {
       const job = await api("/api/jobs", { method: "POST", body: {
         source: $("#source").value, kinds: pick("kinds"), lengths: pick("lengths"), aspects: pick("aspects"),
-        voice: $("#voice").value, notes: $("#notes").value, highlight: $("#highlight").value,
+        voice: $("#voice").value, notes: $("#notes").value, highlight: $("#highlight").value, music: $("#music").value,
         info: Object.fromEntries(["home_name", "location", "specs", "builder"].map(k => [k, $("#" + k).value])) } });
       location.hash = `#/job/${job.id}`;
     } catch (err) {
@@ -346,7 +361,8 @@ async function jobView(id) {
       const r = j.request;
       $("#jChips").innerHTML = [...r.kinds.map(k => KIND[k]), ...r.lengths.map(l => l + " s"), ...r.aspects,
         { elevenlabs: "ElevenLabs", edge: "Free voice", say: "Mac voice" }[r.voice] || r.voice,
-        ...(r.highlight ? [`“${r.highlight}”`] : [])].map(c => `<span class="chip">${esc(c)}</span>`).join("");
+        ...(r.highlight ? [`“${r.highlight}”`] : []),
+        ...(r.music && r.music !== "auto" ? [r.music === "none" ? "No music" : trackName(r.music)] : [])].map(c => `<span class="chip">${esc(c)}</span>`).join("");
     }
     const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
     for (const ev of j.events) {
@@ -518,6 +534,65 @@ async function recordForServer(btn, field, msg) {
   activeMic = { btn, stop: () => recorder.state === "recording" && recorder.stop() };
 }
 
+
+// ---------------------------------------------------------------- music
+let MUSIC = { tracks: [], defaults: {} };
+const trackName = f => { const t = MUSIC.tracks.find(t => t.file === f); return t ? t.title : f; };
+const licensed = t => t && !String(t.license || "unknown").startsWith("unknown");
+
+// Fill the music dropdown: the recommended track(s) for the chosen stories first, the library sorted by fit, or none.
+function fillMusic(kinds) {
+  const sel = $("#music");
+  if (!sel) return;
+  const keep = sel.value || "auto";
+  const recs = [...new Set(kinds.map(k => MUSIC.defaults[k]).filter(Boolean))];
+  const fits = t => kinds.some(k => t.suits.includes(k));
+  const tracks = [...MUSIC.tracks].sort((a, b) => fits(b) - fits(a) || a.title.localeCompare(b.title));
+  sel.innerHTML = `<option value="auto">Recommended${recs.length ? ": " + esc(recs.map(trackName).join(" + ")) : ""}</option>`
+    + (tracks.length ? `<optgroup label="Music library">${tracks.map(t => `<option value="${esc(t.file)}">${esc(t.title)}`
+      + `${t.artist ? " · " + esc(t.artist) : ""} · ${Math.round(t.bpm)} bpm${fits(t) ? "" : " · other styles"}`
+      + `${licensed(t) ? "" : " · license unknown"}</option>`).join("")}</optgroup>` : "")
+    + `<option value="none">No music</option>`;
+  sel.value = [...sel.options].some(o => o.value === keep) ? keep : "auto";
+  musicHint(kinds);
+}
+
+function musicHint(kinds) {
+  const v = $("#music").value, el = $("#musicHint");
+  const files = v === "auto" ? [...new Set(kinds.map(k => MUSIC.defaults[k]).filter(Boolean))] : v === "none" ? [] : [v];
+  $("#musicPlay").hidden = !files.length;
+  if (v === "none") { el.textContent = "Templates 1 and 2 are made for music; without it they play silent."; return; }
+  if (!MUSIC.tracks.length) { el.textContent = "No tracks in assets/music yet; videos will be silent."; return; }
+  const parts = files.map(f => {
+    const t = MUSIC.tracks.find(t => t.file === f);
+    if (!t) return "";
+    const off = kinds.filter(k => !t.suits.includes(k)).map(k => KIND[k]);
+    return `${esc(t.title)}: ${Math.round(t.bpm)} bpm, ${esc(t.tone)}, ${esc(t.energy)}`
+      + (off.length ? `. Not a typical fit for ${esc(off.join(", "))}` : "")
+      + (licensed(t) ? "" : `. <span class="warnline">License unknown: check before posting.</span>`);
+  });
+  el.innerHTML = (v === "auto" ? "Picked for each story's pace. " : "") + parts.filter(Boolean).join("<br>")
+    + "<br>Cuts land on the beat; each video starts at the track's best section.";
+}
+
+// Preview the part of the track the video would use (15 s from its best start for the first chosen story).
+function previewMusic(kinds, lengths) {
+  const btn = $("#musicPlay");
+  if (!audio.paused && btn.dataset.playing) { audio.pause(); delete btn.dataset.playing; btn.textContent = "▶ Preview"; return; }
+  const v = $("#music").value, kind = kinds[0] || "build";
+  const file = v === "auto" ? MUSIC.defaults[kind] : v;
+  const t = MUSIC.tracks.find(t => t.file === file);
+  if (!t) return;
+  const starts = t.starts[kind] || t.starts.default || {}, len = String(lengths[0] || 15);
+  const from = Number(starts[len] ?? Object.values(starts)[0] ?? 0);
+  audio.src = `/api/music/file/${encodeURIComponent(file)}#t=${from}`;
+  audio.currentTime = from;
+  audio.play().catch(() => {});
+  btn.dataset.playing = "1"; btn.textContent = "■ Stop";
+  const stopAt = from + Number(len);
+  audio.ontimeupdate = () => { if (audio.currentTime >= stopAt) { audio.pause(); } };
+  audio.onpause = () => { delete btn.dataset.playing; btn.textContent = "▶ Preview"; audio.ontimeupdate = null; };
+}
 // ---------------------------------------------------------------- settings
 
 async function loadSettings() {
@@ -585,7 +660,8 @@ function route() {
   m ? jobView(m[1]) : homeView();
 }
 window.addEventListener("hashchange", route);
-Promise.all([loadSettings(), api("/api/templates").then(t => { TEMPLATES = t; }).catch(() => {})]).then(route);
+Promise.all([loadSettings(), api("/api/templates").then(t => { TEMPLATES = t; }).catch(() => {}),
+             api("/api/music").then(m => { MUSIC = m; }).catch(() => {})]).then(route);
 </script>
 </body>
 </html>
