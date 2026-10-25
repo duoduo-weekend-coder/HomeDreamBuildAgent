@@ -96,7 +96,7 @@
     },
     {
       "source": "media/overview/exterior-closing.jpg",
-      "duration": 4.0,
+      "duration": 5.0,
       "motion": "zoom_out",
       "kicker": "{slogan}",
       "title": "{website}",

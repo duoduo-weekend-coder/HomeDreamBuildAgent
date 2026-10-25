@@ -75,7 +75,7 @@
     },
     {
       "source": "media/tour/exterior-leaving.jpg",
-      "duration": 3.0,
+      "duration": 4.5,
       "motion": "zoom_out",
       "kicker": "{slogan}",
       "title": "{website}",

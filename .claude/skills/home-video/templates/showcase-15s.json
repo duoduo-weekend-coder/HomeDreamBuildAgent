@@ -127,7 +127,7 @@
     },
     {
       "source": "media/showcase/detail-styled.jpg",
-      "duration": 1.4,
+      "duration": 1.6,
       "motion": "zoom_in",
       "motion_amount": 0.04,
       "narration": [
@@ -137,7 +137,7 @@
     },
     {
       "source": "media/showcase/calm-wide.jpg",
-      "duration": 2.6,
+      "duration": 3.2,
       "motion": "zoom_out",
       "motion_amount": 0.04,
       "layout": "center",
