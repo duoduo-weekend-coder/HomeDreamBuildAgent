@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dream Home Build: AI Marketing Agent</title>
+<style>
+  @font-face { font-family: "Montserrat"; src: url("../../assets/fonts/Montserrat.ttf"); font-weight: 100 900; }
+  :root {
+    --bg: #0f1115; --panel: #171a21; --line: #262b36; --text: #e8eaef; --muted: #9aa3b2;
+    --accent: #f2b544; --accent2: #5cc8a8; --warn: #ef6b5b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+  .deck { height: 100vh; overflow: hidden; position: relative; }
+  .slide { position: absolute; inset: 0; padding: 56px 72px 80px; display: none; flex-direction: column; gap: 22px;
+    overflow-y: auto; }
+  .slide.active { display: flex; animation: fade .35s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  h1, h2, .display { font-family: "Montserrat", sans-serif; font-weight: 800; letter-spacing: .3px; margin: 0; }
+  h1 { font-size: 56px; line-height: 1.05; }
+  h2 { font-size: 36px; }
+  h3 { margin: 0 0 6px; font-size: 18px; }
+  p { margin: 0; color: var(--muted); line-height: 1.5; font-size: 17px; }
+  .kicker { color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; font-size: 13px; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; flex: 1; min-width: 220px; }
+  .big { font-family: "Montserrat"; font-weight: 800; font-size: 44px; color: var(--accent); }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: #222836; color: var(--muted);
+    font-size: 12px; margin: 2px 4px 2px 0; }
+  .done { color: var(--accent2); } .todo { color: var(--accent); } .no { color: var(--warn); }
+  /* nav */
+  .nav { position: fixed; bottom: 18px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 5; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #3a4150; border: 0; cursor: pointer; padding: 0; }
+  .dot.on { background: var(--accent); width: 26px; border-radius: 6px; }
+  .arrows { position: fixed; bottom: 12px; right: 24px; display: flex; gap: 8px; z-index: 5; }
+  .arrows button, .btn { background: #222836; color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 14px; cursor: pointer; font-size: 14px; }
+  .btn.primary { background: var(--accent); color: #1a1406; border: 0; font-weight: 700; }
+  .counter { position: fixed; bottom: 18px; left: 24px; color: var(--muted); font-size: 13px; z-index: 5; }
+  /* pipeline */
+  .pipe { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; cursor: pointer;
+    min-width: 120px; flex: 1; transition: .2s; position: relative; }
+  .step:hover { border-color: #3d4556; }
+  .step.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .step .n { font-family: Montserrat; font-weight: 800; color: var(--accent); font-size: 13px; }
+  .step .t { font-weight: 700; margin-top: 4px; font-size: 15px; }
+  .step .s { font-size: 11px; margin-top: 4px; }
+  .detail { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: 22px; min-height: 300px; }
+  .detail img { max-width: 100%; border-radius: 10px; display: block; }
+  ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); line-height: 1.6; }
+  /* bars */
+  .bars { display: flex; flex-direction: column; gap: 8px; }
+  .bar { display: grid; grid-template-columns: 90px 1fr 40px; align-items: center; gap: 10px; font-size: 14px; }
+  .bar .fill { height: 18px; border-radius: 4px; background: var(--accent2); width: 0; transition: width 1s ease; }
+  /* before/after slider */
+  .ba { position: relative; width: 100%; max-width: 420px; aspect-ratio: 3/4; overflow: hidden; border-radius: 12px; user-select: none; }
+  .ba img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ba .after { clip-path: inset(0 0 0 50%); }
+  .ba .handle { position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; background: var(--accent); }
+  .ba .grid { position: absolute; inset: 0; background-image: linear-gradient(90deg, rgba(255,60,60,.55) 1px, transparent 1px);
+    background-size: 40px 100%; pointer-events: none; }
+  .ba input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: ew-resize; }
+  .ba .lbl { position: absolute; top: 8px; padding: 3px 8px; background: rgba(0,0,0,.6); border-radius: 6px; font-size: 12px; }
+  /* templates */
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tab { padding: 10px 16px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); cursor: pointer; font-weight: 600; }
+  .tab.on { border-color: var(--accent); color: var(--accent); }
+  .strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+  .shot { flex: 0 0 auto; width: 108px; }
+  .shot .img { width: 108px; height: 192px; border-radius: 8px; background-size: cover; background-position: center; position: relative; }
+  .shot .cap { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.3; }
+  .shot .tag { position: absolute; left: 6px; top: 6px; background: rgba(0,0,0,.65); font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+  .shot .ovl { position: absolute; left: 4px; right: 4px; top: 38%; text-align: center; font-family: Montserrat; font-weight: 800;
+    font-size: 11px; line-height: 1.15; text-shadow: 0 1px 4px rgba(0,0,0,.9); }
+  .shot.user .img { outline: 2px solid var(--accent); }
+  /* composer */
+  .composer { display: grid; grid-template-columns: 1fr 330px; gap: 28px; align-items: start; }
+  .phone { width: 300px; height: 533px; border-radius: 28px; border: 8px solid #2a2f3a; position: relative; overflow: hidden;
+    background: #000 center/cover no-repeat; transition: background-image .4s; }
+  .phone .t1 { position: absolute; left: 14px; right: 14px; top: 9%; text-align: center; font-family: Montserrat; font-weight: 800;
+    font-size: 19px; line-height: 1.2; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,.85); white-space: pre-line; }
+  .phone .t2 { position: absolute; left: 14px; right: 14px; top: 68%; text-align: center; font-family: Montserrat; font-weight: 800;
+    font-size: 22px; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,.85); }
+  .phone .prog { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); width: 0; }
+  textarea, select, input[type=text] { width: 100%; background: #10131a; color: var(--text); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; font-size: 15px; font-family: inherit; }
+  label { font-size: 13px; color: var(--muted); display: block; margin: 12px 0 6px; }
+  .check { font-size: 14px; margin-top: 10px; }
+  video { width: 100%; max-height: 62vh; border-radius: 14px; background: #000; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  td, th { border-bottom: 1px solid var(--line); padding: 9px 8px; text-align: left; vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .flow .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+  .flow .arr { color: var(--accent); font-weight: 800; }
+  .hero-bg { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,17,21,.97) 40%, rgba(15,17,21,.55)),
+    url("../../data/presentation_assets/wh_961.jpg") right center/contain no-repeat; z-index: -1; }
+  .note { font-size: 12px; color: #6f7888; }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1. Title -->
+<section class="slide">
+  <div class="hero-bg"></div>
+  <div class="kicker">Hackathon · AI agents for small business</div>
+  <h1>Drop your photos.<br>Get reels, followers<br>and booked calls.</h1>
+  <p style="max-width:620px">An AI marketing workflow for a custom home builder. It turns two years of raw construction media into
+    scheduled Instagram reels, and an AI front desk turns the viewers into qualified, booked leads.</p>
+  <div class="row" style="max-width:720px">
+    <div class="card"><div class="big">2</div><p>agents: Reels and CRM</p></div>
+    <div class="card"><div class="big">8.2 GB</div><p>of raw media organized automatically</p></div>
+    <div class="card"><div class="big">0 h</div><p>of editing for the builder</p></div>
+  </div>
+  <p class="note">Use ← → keys, the arrows, or the dots to navigate.</p>
+</section>
+
+<!-- 2. Problem -->
+<section class="slide">
+  <div class="kicker">The problem</div>
+  <h2>Great builder, invisible online</h2>
+  <div class="row">
+    <div class="card"><h3>Tons of raw media</h3><p>Drone flights and phone photos from every stage of 4 projects, nearly 2 years of footage.
+      Nobody has time to sort it, let alone edit it.</p></div>
+    <div class="card"><h3>Instagram is dead</h3><p>The algorithm rewards consistency. A builder on site all day can't post daily reels.</p></div>
+    <div class="card"><h3>Viewers don't become calls</h3><p>DMs and comments go unanswered. Estimating a $1M home needs a real person,
+      but the prep questions don't.</p></div>
+  </div>
+  <div class="card" style="flex:none">
+    <h3>What the business wants to prove</h3>
+    <div class="row" style="gap:10px;margin-top:8px">
+      <span class="display" style="font-size:28px">ON TIME</span><span class="display" style="font-size:28px;color:var(--muted)">·</span>
+      <span class="display" style="font-size:28px">ON BUDGET</span><span class="display" style="font-size:28px;color:var(--muted)">·</span>
+      <span class="display" style="font-size:28px">QUALITY</span>
+    </div>
+  </div>
+</section>
+
+<!-- 3. Solution overview -->
+<section class="slide">
+  <div class="kicker">The solution</div>
+  <h2>Two agents, one workflow</h2>
+  <div class="flow">
+    <div class="box">📁 Builder drops media<br><span class="note">Drive folder</span></div><span class="arr">→</span>
+    <div class="box"><b>Reels agent</b><br><span class="note">tag · dedupe · fix · template · render</span></div><span class="arr">→</span>
+    <div class="box">📱 Instagram<br><span class="note">auto-post Mon–Fri</span></div><span class="arr">→</span>
+    <div class="box">💬 "Comment BUILD"<br><span class="note">comment / DM</span></div><span class="arr">→</span>
+    <div class="box"><b>CRM agent</b><br><span class="note">answer · qualify · book</span></div><span class="arr">→</span>
+    <div class="box">📅 Calendar + 📲 SMS to team</div>
+  </div>
+  <div class="row">
+    <div class="card"><h3>Reels agent</h3><p>Understands every photo and clip, keeps the best of each scene, straightens it, fills a
+      proven viral template, and adds voiceover, captions and motion.</p></div>
+    <div class="card"><h3>CRM agent</h3><p>Answers questions, collects project details (type, land, size, timeline, budget range),
+      never quotes prices, books a consultation and texts the team.</p></div>
+    <div class="card"><h3>Not niche</h3><p>Everything business-specific lives in one config file. Swap it, and a restaurant drops
+      dish photos instead of drone footage.</p></div>
+  </div>
+</section>
+
+<!-- 4. Media library -->
+<section class="slide">
+  <div class="kicker">Step 1 · The media library</div>
+  <h2>Three folders of raw input</h2>
+  <div class="row">
+    <div class="card">
+      <div class="kicker" style="color:var(--accent2)">1 · Interior / finished</div>
+      <div class="big">141</div><p>photos of the finished "White House", 899 MB (evening interiors + daylight exteriors)</p>
+      <div style="margin-top:10px"><span class="pill done">tagged</span><span class="pill done">deduped</span><span class="pill done">straightened</span></div>
+    </div>
+    <div class="card">
+      <div class="kicker" style="color:var(--accent2)">2 · Process images</div>
+      <div class="big">24+</div><p>construction-stage stills (drone stills now; phone photos from site visits next)</p>
+      <div style="margin-top:10px"><span class="pill todo">next: same tagging pass</span></div>
+    </div>
+    <div class="card">
+      <div class="kicker" style="color:var(--accent2)">3 · Drone video</div>
+      <div class="big">24</div><p>4K DJI clips, 654 s total, 7.3 GB, from site clearing to house wrap</p>
+      <div style="margin-top:10px"><span class="pill done">keyframe-tagged</span><span class="pill done">duplicates found</span></div>
+    </div>
+  </div>
+  <p>The builder never renames, sorts or picks anything. The agent builds a searchable catalog (scene, room, stage, quality,
+    problems) and every later step reads from it, so heavy media is analyzed only once.</p>
+</section>
+
+<!-- 5. Pipeline (interactive) -->
+<section class="slide">
+  <div class="kicker">Step 2 · The pipeline (click a step)</div>
+  <h2>From raw media to a finished reel</h2>
+  <div class="pipe" id="pipe"></div>
+  <div class="detail" id="pipeDetail"></div>
+</section>
+
+<!-- 6. Tagging + dedupe results -->
+<section class="slide">
+  <div class="kicker">Pre-tagging & de-duplication: real results</div>
+  <h2>141 photos → 95 unique scenes</h2>
+  <div class="row">
+    <div class="card">
+      <h3>Quality rating per photo</h3>
+      <div class="bars" id="bars"></div>
+      <p class="note" style="margin-top:10px">hero = best for ads · exclude = never post</p>
+    </div>
+    <div class="card">
+      <h3>Automatically excluded</h3>
+      <ul>
+        <li>4 mirror selfies of the photographer</li>
+        <li>2 blurry frames</li>
+        <li>1 shot with the photographer reflected in a black cabinet</li>
+        <li>House number visible → swapped for a clean angle, or blurred</li>
+        <li>"ROAD WORK" sign in the front shot → auto-cropped</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Drone videos: keyframes only</h3>
+      <p>4 frames per clip (10/35/65/90%) instead of decoding 7.3 GB. That gives each clip its stage, subject and best moments.</p>
+      <img src="../../data/video_index/sheets/v02.jpg" style="width:100%;border-radius:8px;margin-top:10px">
+      <p class="note">v02: facade → fly through the window into the framed interior. Tagged as the best "hook" shot.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Correction -->
+<section class="slide">
+  <div class="kicker">Correction: drag the slider</div>
+  <h2>Verticals made vertical</h2>
+  <div class="row" style="align-items:flex-start">
+    <div>
+      <div class="ba" id="ba1">
+        <img src="../../data/preview/st_961_before.jpg"><img class="after" src="../../data/preview/st_961_after.jpg">
+        <div class="grid"></div><div class="handle"></div>
+        <span class="lbl" style="left:8px">before</span><span class="lbl" style="right:8px">after</span>
+        <input type="range" min="0" max="100" value="50">
+      </div>
+      <p class="note" style="margin-top:6px">Window wall: verticals converged 6.4° (camera pointed up) → fixed</p>
+    </div>
+    <div>
+      <div class="ba" id="ba2" style="aspect-ratio:4/3;max-width:520px">
+        <img src="../../data/preview/st_973_before.jpg"><img class="after" src="../../data/preview/st_973_after.jpg">
+        <div class="grid"></div><div class="handle"></div>
+        <span class="lbl" style="left:8px">before</span><span class="lbl" style="right:8px">after</span>
+        <input type="range" min="0" max="100" value="50">
+      </div>
+      <p class="note" style="margin-top:6px">Rear exterior: camera rolled 3.9° → leveled</p>
+    </div>
+    <div class="card" style="max-width:340px">
+      <h3>How</h3>
+      <ul>
+        <li>Detect wall, door and window edges</li>
+        <li>Fit <b>tilt</b> (camera roll) and <b>keystone</b> (camera pitch)</li>
+        <li>One perspective warp, then crop the empty corners</li>
+        <li>Guardrails: skip photos with too few lines and anything over 7° (could be intentional)</li>
+      </ul>
+      <p style="margin-top:10px">Then every still gets <b>motion</b>: eased push-ins, pans and pull-outs, rendered from 2× frames so they don't jitter.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Templates -->
+<section class="slide">
+  <div class="kicker">Step 3 · Pick a template</div>
+  <h2>4 viral templates, filled with your best media</h2>
+  <div class="tabs" id="tabs"></div>
+  <div class="card" style="flex:none"><p id="tplWhy"></p></div>
+  <div class="strip" id="tplStrip"></div>
+  <p class="note">What the research found works: a <b>concrete number in the first 3 s</b> · 15–30 s · text on screen the whole time
+    (most viewers watch muted) · a walk-through order that feels like being there · one word to comment as the CTA.</p>
+</section>
+
+<!-- 9. Composer -->
+<section class="slide">
+  <div class="kicker">Step 4 · Your message, guaranteed</div>
+  <h2>Tell it what to highlight</h2>
+  <div class="composer">
+    <div>
+      <label>Template</label>
+      <select id="cTpl"></select>
+      <label>Headline you want in the video (hook card, first 3 s)</label>
+      <input type="text" id="cHook" value="Built in 10 months. On time.">
+      <label>Message you want highlighted (shown on screen + spoken in the voiceover)</label>
+      <textarea id="cMsg" rows="2">Every wall checked twice before drywall</textarea>
+      <label>Call to action keyword</label>
+      <input type="text" id="cCta" value="BUILD">
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="btn primary" id="cGo">Generate shot plan</button>
+        <button class="btn" id="cPlay">▶ Preview</button>
+      </div>
+      <div class="check" id="cCheck"></div>
+      <div class="strip" id="cStrip" style="margin-top:12px"></div>
+    </div>
+    <div>
+      <div class="phone" id="phone"><div class="t1" id="pT1"></div><div class="t2" id="pT2"></div><div class="prog" id="pProg"></div></div>
+      <p class="note" style="margin-top:8px;text-align:center">Mock preview in the real caption font. The pipeline renders the final MP4.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10. Results -->
+<section class="slide">
+  <div class="kicker">Results: rendered by the pipeline today</div>
+  <h2>Two real outputs</h2>
+  <div class="row">
+    <div class="card" style="max-width:360px">
+      <h3>Vibe final show · 23.6 s</h3>
+      <video src="../../data/preview/demo_t1_v2.mp4" controls playsinline></video>
+      <p class="note" style="margin-top:6px">8 hero shots · stat-card hook · ElevenLabs voice · word-synced captions · "Comment BUILD"</p>
+    </div>
+    <div class="card" style="max-width:360px">
+      <h3>Walk-through with narrative · 130 s</h3>
+      <video src="../../data/preview/demo_tour.mp4" controls playsinline></video>
+      <p class="note" style="margin-top:6px">All 95 unique scenes once, 15 numbered rooms, road sign cropped out, house number blurred</p>
+    </div>
+    <div class="card">
+      <h3>What the builder did</h3>
+      <p class="display" style="font-size:40px;color:var(--accent2)">Nothing.</p>
+      <p style="margin-top:10px">No sorting, no editing, no captions. Facts shown are dummy placeholders until the builder confirms
+        the real numbers. The agent never invents claims.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 11. CRM -->
+<section class="slide">
+  <div class="kicker">Agent 2 · The CRM front desk</div>
+  <h2>From "Comment BUILD" to a booked call</h2>
+  <div class="flow">
+    <div class="box">Viewer comments <b>BUILD</b></div><span class="arr">→</span>
+    <div class="box">Public reply + private DM</div><span class="arr">→</span>
+    <div class="box">Qualifying chat<br><span class="note">1–2 questions at a time</span></div><span class="arr">→</span>
+    <div class="box">Offers 3 real calendar slots</div><span class="arr">→</span>
+    <div class="box">Books + Meet link</div><span class="arr">→</span>
+    <div class="box">📲 SMS: "Jane, custom home, Kirkland, has land, 6–12 mo, Tue 2pm"</div>
+  </div>
+  <div class="row">
+    <div class="card"><h3>Collects</h3><p>Project type · location · land or house · size · budget range · timeline · financing ·
+      plans/permits · the reel they liked · contact info</p></div>
+    <div class="card"><h3>Guardrails</h3><ul>
+      <li>Never quotes prices or estimates, enforced by a regex check after every reply</li>
+      <li>Hands off to a human on complaints, legal talk, or "real person"</li>
+      <li>Only offers slots that actually exist on the calendar</li>
+      <li>Ignores duplicate webhooks and its own messages</li></ul></div>
+    <div class="card"><h3>Human in the loop</h3><p>The team gets the full lead summary by SMS and the calendar invite. They
+      walk into the call already knowing the project.</p></div>
+  </div>
+</section>
+
+<!-- 12. Status -->
+<section class="slide">
+  <div class="kicker">Where we are</div>
+  <h2>Honest status</h2>
+  <table>
+    <tr><th>Piece</th><th>Status</th><th>Notes</th></tr>
+    <tr><td>Media catalog: tagging, quality, dedupe</td><td class="done">Working</td><td>141 photos + 24 videos cataloged; process-photo folder next</td></tr>
+    <tr><td>Auto straightening + crops/blur</td><td class="done">Working</td><td>Tilt + keystone; privacy blur per photo</td></tr>
+    <tr><td>Renderer: motion, voice, captions, text cards</td><td class="done">Working</td><td>ElevenLabs voice, Montserrat captions, 9:16 H.264</td></tr>
+    <tr><td>Templates: vibe final show, walk-through</td><td class="done">Rendered</td><td>See the results slide</td></tr>
+    <tr><td>Templates: building process, drone + process</td><td class="todo">Next</td><td>Needs video clips as shots in the renderer</td></tr>
+    <tr><td>User highlight text in the pipeline</td><td class="todo">Next</td><td>Cards work today; wire into the template filler + script writer</td></tr>
+    <tr><td>Instagram auto-post + scheduler</td><td class="todo">Built, not live</td><td>Graph API code with mock mode; needs Meta app + ngrok</td></tr>
+    <tr><td>CRM agent: chat, booking, SMS</td><td class="todo">In progress</td><td>Tools + guardrails written; agent loop + webhooks next</td></tr>
+  </table>
+</section>
+
+<!-- 13. Close -->
+<section class="slide">
+  <div class="hero-bg"></div>
+  <div class="kicker">Why it matters</div>
+  <h1>The builder builds.<br>The agents market.</h1>
+  <p style="max-width:620px">Consistent reels grow the audience. The CRM agent turns that audience into qualified calls. One config file
+    makes it work for any small business with something worth showing.</p>
+  <div class="row" style="max-width:720px">
+    <div class="card"><h3>Drop</h3><p>photos & clips into a folder</p></div>
+    <div class="card"><h3>Post</h3><p>a reel every weekday, automatically</p></div>
+    <div class="card"><h3>Book</h3><p>calls with leads who are already qualified</p></div>
+  </div>
+</section>
+
+</div>
+
+<div class="counter" id="counter"></div>
+<div class="nav" id="nav"></div>
+<div class="arrows"><button id="prev">←</button><button id="next">→</button></div>
+
+<script>
+const A = "../../data/presentation_assets/";
+const slides = [...document.querySelectorAll(".slide")];
+let cur = 0;
+function go(i) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, k) => s.classList.toggle("active", k === cur));
+  document.querySelectorAll(".dot").forEach((d, k) => d.classList.toggle("on", k === cur));
+  document.getElementById("counter").textContent = `${cur + 1} / ${slides.length}`;
+  history.replaceState(null, "", "#" + (cur + 1));
+  if (slides[cur].querySelector("#bars")) animateBars();
+  document.querySelectorAll("video").forEach(v => { if (!slides[cur].contains(v)) v.pause(); });
+}
+slides.forEach((_, k) => { const b = document.createElement("button"); b.className = "dot"; b.onclick = () => go(k);
+  document.getElementById("nav").appendChild(b); });
+document.getElementById("prev").onclick = () => go(cur - 1);
+document.getElementById("next").onclick = () => go(cur + 1);
+document.addEventListener("keydown", e => {
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+  if (e.key === "ArrowRight" || e.key === " ") go(cur + 1);
+  if (e.key === "ArrowLeft") go(cur - 1);
+});
+
+/* ---------- pipeline ---------- */
+const STEPS = [
+  { t: "Ingest", s: "Drive folders", img: A + "v04.jpg", body: `<h3>Ingest</h3><p>The builder drops media into three Drive folders: interior/finished, process images, drone video.
+     Nothing gets renamed or sorted. Folder convention <code>project/date/</code> plus an optional <code>notes.txt</code> ("framing done, 2 days early").</p>` },
+  { t: "Pre-tag", s: "understand the scene", img: "../../data/image_index/whitehouse_sheets/s04.jpg", body: `<h3>Pre-tag every file</h3>
+     <p>Claude vision looks at contact sheets (9 photos per image) and records <b>room / stage, tags, a one-line description,
+     quality (hero → exclude) and problems</b> (people, blur, house numbers, signs).</p><ul><li>Saved as JSON + Markdown, so media is analyzed once</li><li>141 photos → 16 sheets</li></ul>` },
+  { t: "De-duplicate", s: "best of each scene", img: "../../data/image_index/whitehouse_sheets/s03.jpg", body: `<h3>One photo per scene</h3>
+     <p>Feature matching plus visual review group near-identical framings. A different angle counts as a new scene.
+     The highest-quality photo represents the group.</p><ul><li>141 photos → <b>95 scenes</b></li><li>7 excluded with a reason</li></ul>` },
+  { t: "Correct", s: "level & plumb", img: "../../data/preview/st_961_after.jpg", body: `<h3>Straighten</h3>
+     <p>Fits camera roll (tilt) and pitch (keystone) from vertical edges, applies one perspective warp, then crops.
+     Also applies per-photo crops and privacy blur.</p><ul><li>6 of 8 hero shots needed correction</li></ul>` },
+  { t: "Keyframes", s: "video, cheaply", img: "../../data/video_index/sheets/v14.jpg", body: `<h3>Keyframes for video</h3>
+     <p>Each drone clip is analyzed from 4 frames (10/35/65/90%) instead of being decoded fully: stage, subject, usable range, hook potential.</p>
+     <ul><li>24 clips · 654 s · 7.3 GB → 96 frames</li><li>Found 2 duplicate exports and 1 clip that drifts into a tree</li></ul>` },
+  { t: "Template", s: "user picks 1 of 4", img: A + "wh_973.jpg", body: `<h3>Pick a template</h3>
+     <p>Building process · Vibe final show · Drone + process · Walk-through with narrative. Each template is a list of slots
+     (room/stage, duration, text) plus the hook pattern and CTA keyword.</p>` },
+  { t: "Fill", s: "best media + your message", img: A + "wh_850.jpg", body: `<h3>Fill the slots</h3>
+     <p>Slots are filled from the catalog by room or stage and quality (never weak or excluded). Your highlight message is
+     <b>required</b> to appear: as an on-screen card and in the voiceover script, and the generator checks it is there.</p>` },
+  { t: "Render", s: "voice · captions · motion", img: A + "wh_989.jpg", body: `<h3>Render</h3>
+     <p>Claude writes the script → ElevenLabs voice with word timings → captions synced word by word → eased camera moves
+     → crossfades → optional music ducked under the voice → 1080×1920 H.264.</p>` },
+  { t: "Publish", s: "Mon–Fri 9am", img: A + "wh_961.jpg", body: `<h3>Publish</h3>
+     <p>Instagram Graph API: create the reel container → wait → publish, on a weekday schedule. Approve-first or fully automatic.</p>` },
+  { t: "CRM", s: "comments → calls", img: A + "wh_958.jpg", body: `<h3>Convert</h3>
+     <p>"Comment BUILD" triggers the CRM agent: private DM, qualifying chat, calendar booking, SMS to the team.</p>` },
+];
+const pipe = document.getElementById("pipe");
+STEPS.forEach((st, i) => {
+  const d = document.createElement("div"); d.className = "step";
+  d.innerHTML = `<div class="n">${String(i + 1).padStart(2, "0")}</div><div class="t">${st.t}</div><div class="s note">${st.s}</div>`;
+  d.onclick = () => selStep(i); pipe.appendChild(d);
+});
+function selStep(i) {
+  [...pipe.children].forEach((c, k) => c.classList.toggle("sel", k === i));
+  document.getElementById("pipeDetail").innerHTML = `<div>${STEPS[i].body}</div><div><img src="${STEPS[i].img}" style="max-height:340px;margin:auto"></div>`;
+}
+selStep(0);
+
+/* ---------- bars ---------- */
+const Q = [["hero", 26], ["good", 49], ["ok", 43], ["weak", 18], ["exclude", 5]];
+const bars = document.getElementById("bars");
+Q.forEach(([k, v]) => { bars.insertAdjacentHTML("beforeend",
+  `<div class="bar"><span>${k}</span><div style="background:#222836;border-radius:4px"><div class="fill" data-v="${v}"
+   style="${k === "exclude" ? "background:var(--warn)" : k === "weak" ? "background:#7a8291" : ""}"></div></div><b>${v}</b></div>`); });
+function animateBars() { document.querySelectorAll(".fill").forEach(f => { f.style.width = "0"; setTimeout(() => f.style.width = (f.dataset.v / 49 * 100) + "%", 60); }); }
+
+/* ---------- before/after ---------- */
+document.querySelectorAll(".ba").forEach(ba => {
+  const r = ba.querySelector("input"), after = ba.querySelector(".after"), h = ba.querySelector(".handle");
+  r.oninput = () => { after.style.clipPath = `inset(0 0 0 ${r.value}%)`; h.style.left = r.value + "%"; };
+});
+
+/* ---------- templates ---------- */
+const S = (img, cap, ovl = "", tag = "") => ({ img: A + img, cap, ovl, tag });
+const TEMPLATES = {
+  "Building process": {
+    why: "Mon–Fri serial, one stage per day. Flash the finished home for 1 s as the hook, rewind to today's stage, end with \"Tomorrow: …\". Builds followers who come back daily, and consistency is what the algorithm rewards.",
+    shots: [S("wh_961.jpg", "1 s flash of the finish", "DAY 1: HOW WE GET HERE", "hook"), S("v22.jpg", "Mon: bare lot", "", "drone"),
+      S("v18.jpg", "Tue: foundation", "", "drone"), S("v20.jpg", "Wed: crew framing", "", "drone"), S("v02.jpg", "Thu: fly through the frame", "", "drone"),
+      S("v12.jpg", "Fri: sealed for winter", "", "drone"), S("v16.jpg", "end card", "TOMORROW: THE ROOF", "cta")] },
+  "Vibe final show": {
+    why: "Pure payoff: the finished home in 25 s. A stat-card hook with a concrete number (\"Built in 10 months. On time.\"), walk-through order, best view last, \"Comment BUILD\".",
+    shots: [S("wh_973.jpg", "exterior + stat card", "BUILT IN 10 MONTHS\nON TIME", "hook"), S("wh_961.jpg", "window wall"), S("wh_883.jpg", "fireplace"),
+      S("wh_850.jpg", "kitchen"), S("wh_918.jpg", "primary bath"), S("wh_947.jpg", "wet bar"), S("wh_987.jpg", "spiral stair"),
+      S("wh_989.jpg", "rooftop: best last", "COMMENT \"BUILD\"", "cta")] },
+  "Drone + process": {
+    why: "From dirt to done in 20 s. Drone reveals of each stage, then the finished interior. Each cut group shows one value: on time, on budget, quality. Strongest proof shot.",
+    shots: [S("v22.jpg", "bare lot", "THIS WAS DIRT.", "hook"), S("v18.jpg", "footings", "ON TIME", "drone"), S("v14.jpg", "framing rise", "ON BUDGET", "drone"),
+      S("v15.jpg", "fly-in", "QUALITY", "drone"), S("wh_973.jpg", "the finish", "THIS IS THE FINISH."), S("wh_961.jpg", "inside"),
+      S("wh_989.jpg", "rooftop", "DM \"BUILD\"", "cta")] },
+  "Walk-through with narrative": {
+    why: "The full tour: every unique scene once, numbered rooms, a narrated story. Saves and shares for buyers who want to really see the home. A long-form cut for YouTube/website, plus a short version for reels.",
+    shots: [S("wh_958.jpg", "1. entry", "1. ENTRY"), S("wh_880.jpg", "2. living room", "2. LIVING ROOM"), S("wh_846.jpg", "4. kitchen", "4. KITCHEN"),
+      S("wh_887.jpg", "5. staircase", "5. STAIRCASE"), S("wh_907.jpg", "6. upstairs", "6. UPSTAIRS"), S("wh_919.jpg", "7. primary suite", "7. PRIMARY SUITE"),
+      S("wh_930.jpg", "10. laundry", "10. LAUNDRY"), S("wh_945.jpg", "11. lower level", "11. LOWER LEVEL"), S("wh_970.jpg", "13. backyard", "13. BACKYARD"),
+      S("wh_989.jpg", "14. rooftop", "14. ROOFTOP", "cta")] },
+};
+function shotHTML(s, extraClass = "") {
+  return `<div class="shot ${extraClass}"><div class="img" style="background-image:url('${s.img}')">${s.tag ? `<span class="tag">${s.tag}</span>` : ""}
+    <div class="ovl">${(s.ovl || "").replace(/\n/g, "<br>")}</div></div><div class="cap">${s.cap}</div></div>`;
+}
+const tabs = document.getElementById("tabs");
+Object.keys(TEMPLATES).forEach((k, i) => {
+  const t = document.createElement("div"); t.className = "tab"; t.textContent = `${i + 1}. ${k}`;
+  t.onclick = () => selTpl(k); tabs.appendChild(t);
+  document.getElementById("cTpl").insertAdjacentHTML("beforeend", `<option>${k}</option>`);
+});
+function selTpl(k) {
+  [...tabs.children].forEach(t => t.classList.toggle("on", t.textContent.endsWith(k)));
+  document.getElementById("tplWhy").textContent = TEMPLATES[k].why;
+  document.getElementById("tplStrip").innerHTML = TEMPLATES[k].shots.map(s => shotHTML(s)).join("");
+}
+selTpl("Vibe final show");
+
+/* ---------- composer ---------- */
+const $ = id => document.getElementById(id);
+function plan() {
+  const tpl = TEMPLATES[$("cTpl").value], hook = $("cHook").value.trim(), msg = $("cMsg").value.trim(),
+        cta = $("cCta").value.trim().toUpperCase() || "BUILD";
+  const shots = tpl.shots.map(s => ({ ...s }));
+  shots[0].ovl = hook || shots[0].ovl;
+  const mid = Math.floor(shots.length / 2);           // the user's message rides on a mid-reel shot, no repeated photo
+  if (msg) shots[mid] = { ...shots[mid], ovl: msg, cap: shots[mid].cap + " + your message", tag: "you", user: true };
+  shots[shots.length - 1].ovl = `COMMENT "${cta}"`;
+  return { shots, hook, msg, cta };
+}
+function renderPlan() {
+  const p = plan();
+  $("cStrip").innerHTML = p.shots.map(s => shotHTML(s, s.user ? "user" : "")).join("");
+  const voice = `${p.hook} … ${p.msg} … Comment ${p.cta}.`;
+  const ok = p.msg ? p.shots.some(s => s.ovl === p.msg) && voice.includes(p.msg) : false;
+  $("cCheck").innerHTML = p.msg
+    ? `<span class="${ok ? "done" : "no"}">${ok ? "✔" : "✘"}</span> Message check: appears on screen (slot ${p.shots.findIndex(s => s.user) + 1})
+       and in the voiceover script · ${p.shots.length} shots ≈ ${Math.round(p.shots.length * 2.8)} s`
+    : `<span class="no">✘</span> Add a message to highlight`;
+  setPhone(p.shots[0]);
+}
+function setPhone(s) {
+  $("phone").style.backgroundImage = `url('${s.img}')`;
+  $("pT1").textContent = s.ovl || ""; $("pT2").textContent = "";
+}
+let timer = null;
+$("cPlay").onclick = () => {
+  const p = plan(); let i = 0; clearInterval(timer);
+  const words = (p.msg || p.hook).split(/\s+/);
+  const step = () => {
+    if (i >= p.shots.length) { clearInterval(timer); $("pProg").style.width = "100%"; return; }
+    const s = p.shots[i]; setPhone(s);
+    $("pT2").textContent = s.user ? "" : words.slice((i * 3) % words.length, (i * 3) % words.length + 3).join(" ");
+    $("pProg").style.width = ((i + 1) / p.shots.length * 100) + "%"; i++;
+  };
+  step(); timer = setInterval(step, 1300);
+};
+["cTpl", "cHook", "cMsg", "cCta"].forEach(id => $(id).addEventListener("input", renderPlan));
+$("cGo").onclick = renderPlan;
+$("cTpl").value = "Vibe final show"; renderPlan();
+
+go((parseInt(location.hash.slice(1)) || 1) - 1);
+</script>
+</body>
+</html>

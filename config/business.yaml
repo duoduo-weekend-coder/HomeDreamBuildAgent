@@ -1,0 +1,52 @@
+# Business profile. Everything business-specific lives here so the agents can be reused
+# by any small business (swap this file for a restaurant, salon, etc.).
+name: Dream Home Build
+industry: custom home builder
+location: Greater Seattle area, Washington
+tagline: Custom homes built on time, on budget, with quality you can see.
+values:
+  - On time
+  - On budget
+  - Quality
+services:
+  - New custom homes
+  - Remodels
+  - ADUs and additions
+facts:
+  - Family-run builder with about 15 custom homes completed.
+  - We share real construction progress from our own job sites on Instagram.
+  - Every project starts with a free consultation call with the builder.
+website: https://dreamhomebuild.example.com
+instagram_handle: dreamhomebuild
+tone: warm, confident, plain-spoken; short messages; no jargon; no emojis beyond one per message
+reel_cta: DM us "BUILD" to start planning your home
+
+# Fields the CRM agent tries to collect, in roughly this order. `required` fields gate the team alert.
+lead_fields:
+  - {key: project_type, question: "Is this a new custom home, a remodel, or an ADU/addition?", required: true}
+  - {key: location, question: "Which city or area is the property in?"}
+  - {key: property_status, question: "Do you already own the land or the existing house?"}
+  - {key: size, question: "Roughly how big are you thinking (square feet, beds/baths)?"}
+  - {key: budget_range, question: "Do you have a budget range in mind?"}
+  - {key: timeline, question: "When would you like to start construction?", required: true}
+  - {key: financing, question: "Is financing lined up, or still being explored?"}
+  - {key: plans_permits, question: "Do you have plans, an architect, or permits yet?"}
+  - {key: inspiration, question: "Is there a home or reel of ours that you liked?"}
+  - {key: name, question: "What's your name?", required: true}
+  - {key: phone, question: "Best phone number?"}
+  - {key: email, question: "Email for the calendar invite?"}
+
+booking:
+  meeting_minutes: 30
+  business_hours: {start: 9, end: 17}
+  workdays: [0, 1, 2, 3, 4]  # Mon-Fri
+  timezone: America/Los_Angeles
+  days_ahead: 7
+
+team_phones:
+  - "+15555550100"
+
+reels:
+  post_time: "09:00"
+  post_days: [mon, tue, wed, thu, fri]
+  hashtags: ["#customhome", "#homebuilder", "#seattlebuilder", "#construction", "#newbuild"]

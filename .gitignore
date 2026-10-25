@@ -1,0 +1,22 @@
+# Secrets (API keys; .env is also written by the studio's Voice settings panel)
+.env
+.env.*
+!.env.example
+secrets/
+*.json.key
+
+# Footage, renders and job history stay local: large and private
+media/
+jobs/
+output/
+storyboards/
+data/
+
+# Local tool settings
+.claude/settings.local.json
+
+# Python / macOS
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
