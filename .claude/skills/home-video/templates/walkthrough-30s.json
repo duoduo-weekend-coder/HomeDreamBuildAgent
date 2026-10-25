@@ -1,0 +1,115 @@
+{
+  "kind": "walkthrough",
+  "duration": 30,
+  "aspect": "9:16",
+  "info": {
+    "home_name": "",
+    "location": "",
+    "specs": "",
+    "builder": "",
+    "highlight": ""
+  },
+  "voice": {
+    "provider": "auto"
+  },
+  "music": null,
+  "shots": [
+    {
+      "source": "media/tour/exterior.jpg",
+      "duration": 3.0,
+      "motion": "zoom_in",
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{specs}",
+        "Come inside"
+      ],
+      "subtitle": [
+        "{location}"
+      ],
+      "narration": [
+        "Welcome to {home_name}, in {location}.",
+        "Welcome to {home_name}.",
+        "Come take a look inside."
+      ]
+    },
+    {
+      "source": "media/tour/entry.jpg",
+      "duration": 2.5,
+      "motion": "zoom_in",
+      "kicker": "Entry",
+      "title": "Step inside",
+      "narration": "Step through the front doors."
+    },
+    {
+      "source": "media/tour/living.jpg",
+      "duration": 3.0,
+      "motion": "pan_right",
+      "kicker": "Living",
+      "title": "Light all day",
+      "narration": "The living room opens up to the trees."
+    },
+    {
+      "source": "media/tour/kitchen.jpg",
+      "duration": 3.0,
+      "motion": "pan_left",
+      "kicker": "Kitchen",
+      "title": "Made for gathering",
+      "narration": "The kitchen is made for gathering."
+    },
+    {
+      "source": "media/tour/stairs.jpg",
+      "duration": 2.5,
+      "motion": "pan_up",
+      "kicker": "Stairs",
+      "title": "Up we go"
+    },
+    {
+      "source": "media/tour/primary.jpg",
+      "duration": 3.0,
+      "motion": "zoom_in",
+      "kicker": "Primary suite",
+      "title": "Your retreat",
+      "narration": "Upstairs, a quiet primary suite"
+    },
+    {
+      "source": "media/tour/primary-bath.jpg",
+      "duration": 2.5,
+      "motion": "pan_right",
+      "kicker": "Primary bath",
+      "title": "Spa finishes",
+      "narration": "with a spa bath."
+    },
+    {
+      "source": "media/tour/lower-level.jpg",
+      "duration": 2.5,
+      "motion": "pan_left",
+      "kicker": "Lower level",
+      "title": "Room for weekends"
+    },
+    {
+      "source": "media/tour/best-view.jpg",
+      "duration": 3.5,
+      "motion": "zoom_out",
+      "kicker": "The best part",
+      "title": "Saved for last",
+      "narration": "And we saved the best for last."
+    },
+    {
+      "source": "card",
+      "duration": 4.0,
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{home_name}",
+        "Built with care"
+      ],
+      "subtitle": [
+        "{builder}",
+        "{location}"
+      ],
+      "kicker": "Comment BUILD to book a tour",
+      "narration": "Comment BUILD to book a tour."
+    }
+  ]
+}

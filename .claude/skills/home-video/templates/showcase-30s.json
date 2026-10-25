@@ -1,0 +1,97 @@
+{
+  "kind": "showcase",
+  "duration": 30,
+  "aspect": "9:16",
+  "info": {
+    "home_name": "",
+    "location": "",
+    "specs": "",
+    "builder": "",
+    "highlight": ""
+  },
+  "voice": {
+    "provider": "auto"
+  },
+  "music": null,
+  "shots": [
+    {
+      "source": "media/showcase/hero.jpg",
+      "duration": 3.5,
+      "motion": "zoom_in",
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{specs}"
+      ],
+      "subtitle": [
+        "{location}"
+      ],
+      "narration": [
+        "{highlight}.",
+        "Welcome to {home_name}.",
+        "Welcome home."
+      ]
+    },
+    {
+      "source": "media/showcase/exterior.jpg",
+      "duration": 3.0,
+      "motion": "pan_right"
+    },
+    {
+      "source": "media/showcase/living.jpg",
+      "duration": 3.0,
+      "motion": "zoom_in",
+      "title": "Light"
+    },
+    {
+      "source": "media/showcase/detail-1.jpg",
+      "duration": 2.5,
+      "motion": "pan_left"
+    },
+    {
+      "source": "media/showcase/kitchen.jpg",
+      "duration": 3.0,
+      "motion": "pan_right",
+      "title": "Gather"
+    },
+    {
+      "source": "media/showcase/primary.jpg",
+      "duration": 3.0,
+      "motion": "zoom_in",
+      "title": "Rest"
+    },
+    {
+      "source": "media/showcase/detail-2.jpg",
+      "duration": 2.5,
+      "motion": "pan_up"
+    },
+    {
+      "source": "media/showcase/outdoor.jpg",
+      "duration": 3.0,
+      "motion": "pan_left",
+      "title": "Unwind"
+    },
+    {
+      "source": "media/showcase/best-view.jpg",
+      "duration": 3.5,
+      "motion": "zoom_out",
+      "title": "Stay",
+      "narration": "Built to be lived in."
+    },
+    {
+      "source": "card",
+      "duration": 4.0,
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{home_name}",
+        "Built with care"
+      ],
+      "subtitle": [
+        "{builder}",
+        "{location}"
+      ],
+      "kicker": "Comment BUILD"
+    }
+  ]
+}

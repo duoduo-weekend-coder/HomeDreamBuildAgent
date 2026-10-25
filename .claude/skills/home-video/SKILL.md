@@ -5,12 +5,16 @@ description: Make short marketing videos of a home from photos and video clips. 
 
 # Home video
 
-Turns a folder of photos and clips into a finished 15s or 30s video, in one of two kinds:
+Turns a folder of photos and clips into a finished 15s or 30s video using one of four templates. `templates/catalog.json` defines each one (goal, media, story order, voice, pace), and the web studio shows them to the customer:
 
-| Kind | Story | Templates |
+| Template (`kind`) | Story | Storyboards |
 |---|---|---|
-| **overview** | Environment first (aerial, street, exterior), then a room tour (entry → living → kitchen → dining → primary suite → bath → backyard), then an end card | `templates/overview-15s.json`, `templates/overview-30s.json` |
-| **build** | Construction in order: site → foundation → framing → roof → rough-ins → drywall → finishes → finished exterior → interior reveal, then an end card | `templates/build-15s.json`, `templates/build-30s.json` |
+| **1. Building process** (`build`) | Flash of the finished home, then construction in date order (site → foundation → framing → roof → siding → finishes) with "Step N" kickers, then the reveal | `build-15s.json`, `build-30s.json` |
+| **2. Vibe final show** (`showcase`) | The finished home's best 5–8 shots, slow moves, music-led, one-word titles, best view last; barely any narration | `showcase-15s.json`, `showcase-30s.json` |
+| **3. Drone + process** (`drone`) | "This was dirt." on the earliest aerial, then drone clips in date order, then "This is the finish." | `drone-15s.json`, `drone-30s.json` |
+| **4. Walk-through with narrative** (`walkthrough`) | Narrated tour in walking order (exterior → entry → living → kitchen → suite → …), best room last | `walkthrough-15s.json`, `walkthrough-30s.json` |
+
+Every template ends on a card with `Comment BUILD`. **Highlight message:** when the user gives one, put it in `info.highlight` exactly as written. The templates show it as the hook title and on the end card (long text wraps automatically); also work it into the narration. `overview-*.json` is the older room-tour storyboard, kept for reference.
 
 `scripts/make_video.py` renders a storyboard JSON into an MP4 that is exactly the storyboard's `duration`.
 
@@ -28,7 +32,7 @@ Turns a folder of photos and clips into a finished 15s or 30s video, in one of t
 4. **Copy the matching template** to `storyboards/<kind>-<length>.json` and fill it in:
    - Point each `source` at the best shot for that slot. For clips, set `start` to the strongest moment (from the contact-sheet timestamps). Drop slots with no good media and give their time to neighbours; keep the end card.
    - Rewrite titles to match what's actually in each shot.
-   - Fill `info` (`home_name`, `location`, `specs`, `builder`) from what the user said, the notes or the folder names. **All of these are optional.** Leave a field empty if it isn't known, and never invent one. Text fields can be a list of fallbacks: `["Welcome to {home_name}.", "Welcome home."]` uses the first option whose `{fields}` are all known, and a field whose options are all unknown is simply left out.
+   - Fill `info` (`home_name`, `location`, `specs`, `builder`, `highlight`) from what the user said, the notes or the folder names. **All of these are optional.** Leave a field empty if it isn't known, and never invent one. Text fields can be a list of fallbacks: `["Welcome to {home_name}.", "Welcome home."]` uses the first option whose `{fields}` are all known, and a field whose options are all unknown is simply left out.
    - The templates assume a mix of exterior and interior shots. If the media is all aerial or all exterior (typical for drone footage), make the overview an exterior and neighbourhood tour, and tell the user that a room tour needs interior footage.
 5. **Keep the narration brief.** That means about 2.3 spoken words per second of free time: roughly **20–25 words for 15s** and **40–50 for 30s**, spread across 4–6 lines. A line keeps playing over the shots after it that have no narration of their own, which is how a longer sentence covers two shots. If a line is too long, the script stops and names it. Shorten that line; don't remove shots.
 6. **Render** from the project root:

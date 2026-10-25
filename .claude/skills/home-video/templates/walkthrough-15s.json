@@ -1,0 +1,91 @@
+{
+  "kind": "walkthrough",
+  "duration": 15,
+  "aspect": "9:16",
+  "info": {
+    "home_name": "",
+    "location": "",
+    "specs": "",
+    "builder": "",
+    "highlight": ""
+  },
+  "voice": {
+    "provider": "auto"
+  },
+  "music": null,
+  "shots": [
+    {
+      "source": "media/tour/exterior.jpg",
+      "duration": 2.5,
+      "motion": "zoom_in",
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{specs}",
+        "Come inside"
+      ],
+      "subtitle": [
+        "{location}"
+      ],
+      "narration": [
+        "Welcome to {home_name}.",
+        "Come take a look inside."
+      ]
+    },
+    {
+      "source": "media/tour/entry.jpg",
+      "duration": 2.0,
+      "motion": "zoom_in",
+      "kicker": "Entry",
+      "title": "Step inside",
+      "narration": "Step inside,"
+    },
+    {
+      "source": "media/tour/living.jpg",
+      "duration": 2.0,
+      "motion": "pan_right",
+      "kicker": "Living",
+      "title": "Two-storey windows",
+      "narration": "past the living room"
+    },
+    {
+      "source": "media/tour/kitchen.jpg",
+      "duration": 2.0,
+      "motion": "pan_left",
+      "kicker": "Kitchen",
+      "title": "The heart of it",
+      "narration": "to the kitchen."
+    },
+    {
+      "source": "media/tour/primary.jpg",
+      "duration": 2.0,
+      "motion": "zoom_in",
+      "kicker": "Primary suite",
+      "title": "Your retreat",
+      "narration": "Upstairs, your retreat,"
+    },
+    {
+      "source": "media/tour/best-view.jpg",
+      "duration": 2.0,
+      "motion": "zoom_out",
+      "kicker": "The best part",
+      "title": "The view",
+      "narration": "and the best view last."
+    },
+    {
+      "source": "card",
+      "duration": 3.0,
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{home_name}",
+        "Built with care"
+      ],
+      "subtitle": [
+        "{builder}",
+        "{location}"
+      ],
+      "kicker": "Comment BUILD to book a tour"
+    }
+  ]
+}

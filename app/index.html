@@ -37,6 +37,18 @@
   .toggle span { display: inline-block; padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; background: var(--bg); user-select: none; font-size: 14px; }
   .toggle input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   .toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .templates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tpl { position: relative; display: block; margin: 0; cursor: pointer; }
+  .tpl input { position: absolute; opacity: 0; }
+  .tpl .body { display: block; height: 100%; padding: 12px 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); }
+  .tpl .num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--chip); color: var(--muted); font-size: 11px; font-weight: 700; margin-right: 6px; }
+  .tpl b { font-size: 14px; }
+  .tpl .tag { display: block; font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .tpl .flow { display: block; font-size: 11.5px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); line-height: 1.45; }
+  .tpl input:checked + .body { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--soft); }
+  .tpl input:checked + .body .num { background: var(--accent); color: var(--accent-ink); }
+  .tpl input:focus-visible + .body { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 520px) { .templates { grid-template-columns: 1fr; } }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
   details summary { cursor: pointer; color: var(--muted); font-size: 14px; margin-top: 16px; }
   button { font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 9px 14px; }
@@ -103,7 +115,7 @@
 </head>
 <body>
 <header>
-  <h1 onclick="location.hash=''">Home Video Studio <span>· overview &amp; build videos</span></h1>
+  <h1 onclick="location.hash=''">Home Video Studio <span>· 4 reel templates</span></h1>
   <button id="settingsBtn" aria-label="Voice settings">Voice settings</button>
 </header>
 <main id="view"></main>
@@ -133,7 +145,15 @@
 <script>
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const KIND = { overview: "Overview", build: "Build process" };
+let TEMPLATES = {};
+const KIND = new Proxy({ overview: "Overview" }, { get: (o, k) => TEMPLATES[k]?.label || o[k] || k });
+// One-line story flow per template, shown on its card.
+const FLOW = {
+  build: "Finished flash → site → foundation → framing → roof → siding → reveal",
+  showcase: "Best shot + message → 5–8 hero shots → best view last",
+  drone: "“This was dirt” → aerials in date order → “This is the finish”",
+  walkthrough: "Exterior → entry → living → kitchen → suite → best room last",
+};
 const STATUS = { queued: "Queued", running: "Working", done: "Done", failed: "Failed", cancelled: "Cancelled", interrupted: "Interrupted" };
 let settingsState = { elevenlabs_configured: false };
 let timer = null;
@@ -182,11 +202,19 @@ function homeView() {
       <input id="source" type="text" placeholder="Google Drive folder link, or a folder on this Mac" required>
       <div class="hint">The agent reads Drive metadata first and downloads only the shots it uses.</div>
 
-      <h3>Kind</h3>
-      <div class="toggles">
-        <label class="toggle"><input type="checkbox" name="kinds" value="overview"><span>Overview · surroundings &amp; room tour</span></label>
-        <label class="toggle"><input type="checkbox" name="kinds" value="build" checked><span>Build process</span></label>
+      <h3>Template</h3>
+      <div class="templates">
+        ${Object.entries(TEMPLATES).map(([k, t], i) => `
+        <label class="tpl"><input type="checkbox" name="kinds" value="${k}" ${i === 0 ? "checked" : ""}>
+          <span class="body"><span class="num">${i + 1}</span><b>${esc(t.label)}</b>
+            <span class="tag">${esc(t.tagline)}</span>
+            <span class="flow">${esc(FLOW[k] || "")}</span></span></label>`).join("")}
       </div>
+      <div class="hint">Pick one or more; each template is made in every length and format below.</div>
+
+      <label for="highlight">Highlight message (optional)</label>
+      <input id="highlight" type="text" data-voice maxlength="120" placeholder="e.g. Built in 10 months, on time and on budget">
+      <div class="hint">Shown word for word as the opening title and on the end card, and worked into the voiceover.</div>
       <h3>Length</h3>
       <div class="toggles">
         <label class="toggle"><input type="checkbox" name="lengths" value="15" checked><span>15 s</span></label>
@@ -194,8 +222,8 @@ function homeView() {
       </div>
       <h3>Format</h3>
       <div class="toggles">
-        <label class="toggle"><input type="checkbox" name="aspects" value="16:9" checked><span>Horizontal 16:9</span></label>
-        <label class="toggle"><input type="checkbox" name="aspects" value="9:16"><span>Vertical 9:16</span></label>
+        <label class="toggle"><input type="checkbox" name="aspects" value="16:9"><span>Horizontal 16:9</span></label>
+        <label class="toggle"><input type="checkbox" name="aspects" value="9:16" checked><span>Vertical 9:16</span></label>
         <label class="toggle"><input type="checkbox" name="aspects" value="1:1"><span>Square 1:1</span></label>
       </div>
       <div class="hint" id="count"></div>
@@ -243,7 +271,7 @@ function homeView() {
     try {
       const job = await api("/api/jobs", { method: "POST", body: {
         source: $("#source").value, kinds: pick("kinds"), lengths: pick("lengths"), aspects: pick("aspects"),
-        voice: $("#voice").value, notes: $("#notes").value,
+        voice: $("#voice").value, notes: $("#notes").value, highlight: $("#highlight").value,
         info: Object.fromEntries(["home_name", "location", "specs", "builder"].map(k => [k, $("#" + k).value])) } });
       location.hash = `#/job/${job.id}`;
     } catch (err) {
@@ -317,7 +345,8 @@ async function jobView(id) {
       $("#jTitle").textContent = j.title;
       const r = j.request;
       $("#jChips").innerHTML = [...r.kinds.map(k => KIND[k]), ...r.lengths.map(l => l + " s"), ...r.aspects,
-        { elevenlabs: "ElevenLabs", edge: "Free voice", say: "Mac voice" }[r.voice] || r.voice].map(c => `<span class="chip">${esc(c)}</span>`).join("");
+        { elevenlabs: "ElevenLabs", edge: "Free voice", say: "Mac voice" }[r.voice] || r.voice,
+        ...(r.highlight ? [`“${r.highlight}”`] : [])].map(c => `<span class="chip">${esc(c)}</span>`).join("");
     }
     const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
     for (const ev of j.events) {
@@ -556,7 +585,7 @@ function route() {
   m ? jobView(m[1]) : homeView();
 }
 window.addEventListener("hashchange", route);
-loadSettings().then(route);
+Promise.all([loadSettings(), api("/api/templates").then(t => { TEMPLATES = t; }).catch(() => {})]).then(route);
 </script>
 </body>
 </html>

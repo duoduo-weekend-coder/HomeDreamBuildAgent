@@ -1,0 +1,88 @@
+{
+  "kind": "drone",
+  "duration": 30,
+  "aspect": "9:16",
+  "info": {
+    "home_name": "",
+    "location": "",
+    "specs": "",
+    "builder": "",
+    "highlight": ""
+  },
+  "voice": {
+    "provider": "auto"
+  },
+  "music": null,
+  "shots": [
+    {
+      "source": "media/drone/01-bare-lot.mp4",
+      "duration": 3.5,
+      "layout": "center",
+      "title": "This was dirt.",
+      "narration": "This was dirt."
+    },
+    {
+      "source": "media/drone/02-site-prep.mp4",
+      "duration": 3.0,
+      "kicker": "Site prep",
+      "narration": "We cleared it,"
+    },
+    {
+      "source": "media/drone/03-foundation.mp4",
+      "duration": 3.0,
+      "kicker": "Foundation",
+      "narration": "poured the foundation,"
+    },
+    {
+      "source": "media/drone/04-framing.mp4",
+      "duration": 3.0,
+      "kicker": "Framing",
+      "narration": "raised the frame,"
+    },
+    {
+      "source": "media/drone/05-sheathed.mp4",
+      "duration": 3.0,
+      "kicker": "Sheathing"
+    },
+    {
+      "source": "media/drone/06-roof.mp4",
+      "duration": 3.0,
+      "kicker": "Roof & wrap",
+      "narration": "and sealed it before winter."
+    },
+    {
+      "source": "media/drone/07-exterior.mp4",
+      "duration": 3.0,
+      "kicker": "Exterior"
+    },
+    {
+      "source": "media/drone/08-finished.mp4",
+      "duration": 4.0,
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "This is the finish."
+      ],
+      "subtitle": [
+        "{location}"
+      ],
+      "narration": "This is the finish."
+    },
+    {
+      "source": "card",
+      "duration": 4.0,
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{home_name}",
+        "Built with care"
+      ],
+      "subtitle": [
+        "{builder}",
+        "{location}"
+      ],
+      "kicker": "Comment BUILD",
+      "narration": "Comment BUILD to see how."
+    }
+  ]
+}

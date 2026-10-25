@@ -1,0 +1,66 @@
+{
+  "build": {
+    "label": "Building process",
+    "tagline": "Bare lot to finished home, one stage per shot.",
+    "goal": "Prove we build on time: show the whole build in order.",
+    "media": "Process photos and phone clips (shoot dates give the order); one finished shot for the reveal.",
+    "story": [
+      "Hook (0-2s): flash the finished home with the title 'How we built this' (or the highlight message).",
+      "Then construction in date order, one stage per shot: site -> foundation -> framing -> roof & wrap -> siding / exterior -> interior finishes.",
+      "Kicker on every stage shot: 'Step 1', 'Step 2'...; title names the stage in 1-3 words.",
+      "Reveal: the finished home, kicker 'Complete'.",
+      "End card: highlight message or builder name, plus 'Comment BUILD'."
+    ],
+    "voice": "Short, factual, time-driven: name each stage, end on the result. About 2.3 words per second.",
+    "pace": "Fast cuts, 1.5-2.5s per shot.",
+    "files": {"15": "build-15s.json", "30": "build-30s.json"}
+  },
+  "showcase": {
+    "label": "Vibe final show",
+    "tagline": "Mood piece of the finished home: best shots, music first.",
+    "goal": "Make people stop scrolling: the finished home at its most beautiful.",
+    "media": "Only hero-quality interior and exterior photos of the finished home, plus finished-home drone clips.",
+    "story": [
+      "Hook (0-3s): the single most striking shot, with the highlight message (or the home's specs) as a big title.",
+      "Then the best 5-8 shots, alternating wide and detail, light-filled rooms first.",
+      "Best view or most dramatic space LAST before the end card.",
+      "Titles are one or two words (room or feeling), or none at all; no 'Step' kickers.",
+      "End card: highlight message or home name, plus 'Comment BUILD'."
+    ],
+    "voice": "Minimal: one hook line and one closing line only; let the music carry it. Never over 12 words for 15s.",
+    "pace": "Slow, smooth moves, 2-3.5s per shot, soft fades.",
+    "files": {"15": "showcase-15s.json", "30": "showcase-30s.json"}
+  },
+  "drone": {
+    "label": "Drone + process",
+    "tagline": "Aerial view of the same lot changing over time.",
+    "goal": "The 'this was dirt' transformation, told from the sky.",
+    "media": "Drone clips sorted by shoot date (orbits, top-downs, fly-ins); ground shots only to fill a missing stage.",
+    "story": [
+      "Hook (0-3s): earliest aerial (bare lot / top-down) with the title 'This was dirt.'",
+      "Then aerial clips in date order, one stage per shot, matching angle where possible (top-down to top-down, orbit to orbit).",
+      "Kicker on stage shots: the stage name or the date/month ('Month 3').",
+      "Reveal: the finished aerial (or best finished exterior) with the title 'This is the finish.'",
+      "End card: highlight message plus 'Comment BUILD'."
+    ],
+    "voice": "Few lines, big claims only if the user gave them (on time, on budget). About 2 words per second.",
+    "pace": "Keep drone clips moving: real clips over stills, 2-3s each, use speed 1.5-2 for slow orbits.",
+    "files": {"15": "drone-15s.json", "30": "drone-30s.json"}
+  },
+  "walkthrough": {
+    "label": "Walk-through with narrative",
+    "tagline": "Narrated tour in real walking order.",
+    "goal": "Let the viewer feel they walked through the home, with a guide telling its story.",
+    "media": "Interior photos covering every main room, an exterior/approach shot, optional drone establishing shot.",
+    "story": [
+      "Hook (0-3s): exterior or aerial with a stat title: location and specs, or the highlight message.",
+      "Then the tour in walking order: approach -> entry -> living -> kitchen -> stairs -> primary suite -> other bedrooms / baths -> lower level / outdoor.",
+      "Best room or view LAST.",
+      "Kicker on every room shot: the room name; title says what is special about it (2-5 words).",
+      "End card: highlight message or home name, plus 'Comment BUILD to book a tour'."
+    ],
+    "voice": "A guided story in second person ('step inside...'), one line per room or two, about 2.3 words per second.",
+    "pace": "Steady, 2-3s per shot, moves that follow the walking direction.",
+    "files": {"15": "walkthrough-15s.json", "30": "walkthrough-30s.json"}
+  }
+}

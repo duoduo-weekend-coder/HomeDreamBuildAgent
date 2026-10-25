@@ -40,7 +40,9 @@ ALLOWED_TOOLS = [
     "Bash(mkdir *)", "Bash(ls *)", "Bash(cp *)", "Bash(mv *)", "Bash(df *)", "Bash(head *)", "Bash(cat *)",
 ]
 
-KINDS = {"overview": "overview (environment + room tour)", "build": "build process"}
+# The 4 video templates the customer picks from; defined once in the skill and shared with the web page.
+TEMPLATES = json.loads((ROOT / ".claude/skills/home-video/templates/catalog.json").read_text())
+KINDS = {k: t["label"] for k, t in TEMPLATES.items()} | {"overview": "Overview (older jobs)"}
 ASPECTS = {"16:9": "16x9", "9:16": "9x16", "1:1": "1x1", "4:5": "4x5"}
 VOICES = {"edge", "elevenlabs", "openai", "say", "auto"}
 
@@ -234,6 +236,8 @@ Scan it with scan_media.py (reuse {media}/.index if it exists and the file count
         for length in r["lengths"]:
             for aspect in r["aspects"]:
                 videos.append(f"- {KINDS[kind]}, {length}s, {aspect} -> jobs/{job.id}/output/{kind}-{length}s-{ASPECTS[aspect]}.mp4")
+    template_text = "\n\n".join(template_brief(k, r["lengths"]) for k in r["kinds"] if k in TEMPLATES)
+    highlight = r.get("highlight", "").strip()
 
     info = {k: v.strip() for k, v in r.get("info", {}).items() if v and v.strip()}
     info_text = "\n".join(f"- {k}: {v}" for k, v in info.items()) or "- none given (leave every info field empty)"
@@ -248,6 +252,11 @@ Media folder: {media}. If {media}/shots.md exists, reuse it; otherwise write it 
 Make these videos (exact output paths):
 {chr(10).join(videos)}
 
+Each video follows one of the studio's templates. Start from the template file named below, copied into
+jobs/{job.id}/storyboards/, and keep its story order, pacing and text style:
+
+{template_text}
+
 Write storyboards to jobs/{job.id}/storyboards/ and render each with -o set to the path above.
 Give every storyboard a "caption": a short Instagram caption (1-2 sentences plus 3-5 hashtags) that only states what
 the footage shows. Rendering also writes <video>.metadata.json and <video>.metadata.md (the acquisition-agent
@@ -257,6 +266,7 @@ Home details for the storyboard `info` block (use only these, never invent any):
 {info_text}
 
 Voice: set "voice": {{"provider": "{r.get('voice', 'edge')}"}} in every storyboard.
+{highlight_rule(highlight)}
 {f"Extra instructions from the user: {notes}" if notes else ""}
 
 Rules for this unattended run:
@@ -378,6 +388,24 @@ def worker() -> None:
 # ---------------------------------------------------------------- HTTP
 
 
+def template_brief(kind: str, lengths: list[int]) -> str:
+    t = TEMPLATES[kind]
+    files = ", ".join(f".claude/skills/home-video/templates/{t['files'][str(n)]}" for n in lengths)
+    story = "\n".join(f"  {i}. {line}" for i, line in enumerate(t["story"], 1))
+    return (f"Template \"{t['label']}\" ({kind}): {t['goal']}\n"
+            f"Start from: {files}\nMedia to use: {t['media']}\nStory:\n{story}\n"
+            f"Voiceover: {t['voice']}\nPace: {t['pace']}")
+
+
+def highlight_rule(highlight: str) -> str:
+    if not highlight:
+        return "No highlight message was given: leave info.highlight empty."
+    return f"""Highlight message from the user (MUST appear in every video): "{highlight}"
+- Put it in info.highlight exactly as written; the templates show it as the hook title and on the end card.
+- Weave its meaning into the narration too, without adding claims the user didn't make.
+- After rendering, check a frame shows the message in full (not cut off) and mention that in the summary."""
+
+
 def job_summary(job: Job) -> dict:
     r = job.request
     return {"id": job.id, "status": job.status, "created": job.created, "cost": round(job.cost, 2),
@@ -392,15 +420,16 @@ def validate(body: dict) -> dict:
         raise ValueError("Add a Google Drive folder link or a folder path.")
     if not drive_folder_id(source) and not (ROOT / source).exists() and not Path(source).expanduser().exists():
         raise ValueError("That isn't a Google Drive folder link or an existing folder on this Mac.")
-    kinds = [k for k in body.get("kinds", []) if k in KINDS]
+    kinds = [k for k in body.get("kinds", []) if k in TEMPLATES]
     lengths = [int(n) for n in body.get("lengths", []) if int(n) in (15, 30)]
     aspects = [a for a in body.get("aspects", []) if a in ASPECTS]
     if not (kinds and lengths and aspects):
-        raise ValueError("Pick at least one kind, length and format.")
+        raise ValueError("Pick at least one template, length and format.")
     voice = body.get("voice", "edge") if body.get("voice") in VOICES else "edge"
     info = {k: str(body.get("info", {}).get(k, ""))[:120] for k in ("home_name", "location", "specs", "builder")}
     return {"source": source, "kinds": kinds, "lengths": lengths, "aspects": aspects, "voice": voice,
-            "info": info, "notes": str(body.get("notes", ""))[:2000]}
+            "info": info, "highlight": str(body.get("highlight", "")).strip()[:120],
+            "notes": str(body.get("notes", ""))[:2000]}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -437,6 +466,8 @@ class Handler(BaseHTTPRequestHandler):
                 events = job.events[since:]
             return self.send_json({**job_summary(job), "request": job.request, "events": events, "next": since + len(events),
                                    "outputs": job.outputs(), "summary": job.summary()})
+        if parts == ["api", "templates"]:
+            return self.send_json(TEMPLATES)
         if parts == ["api", "settings"]:
             env = read_env_file()
             return self.send_json({"elevenlabs_configured": bool(env.get("ELEVENLABS_API_KEY")),

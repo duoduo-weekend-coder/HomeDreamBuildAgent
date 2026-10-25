@@ -19,6 +19,7 @@ import string
 import subprocess
 import sys
 import tempfile
+import textwrap
 import time
 import urllib.error
 import urllib.request
@@ -221,8 +222,17 @@ def text_filters(shot: dict, dur: float, W: int, H: int, work: Path, idx: int, s
     if not lines:
         return []
 
+    # Wrap long text (e.g. a user's highlight message) to fit the frame; ~0.55em per character.
+    spacing = 8
+    texts = {}
+    for key, size, _ in lines:
+        text = str(shot[key]).upper() if key == "kicker" else str(shot[key])
+        width = max(8, int(W * 0.86 / (size * 0.55)))
+        texts[key] = "\n".join(textwrap.fill(part, width) for part in text.split("\n"))
+    heights = {key: size * (texts[key].count("\n") + 1) + spacing * texts[key].count("\n") for key, size, _ in lines}
+
     gap = round(base * 0.018)
-    block_h = sum(size for _, size, _ in lines) + gap * (len(lines) - 1)
+    block_h = sum(heights.values()) + gap * (len(lines) - 1)
     vertical = H > W
     if is_card or shot.get("layout") == "center":
         top, centered = (H - block_h) / 2, True
@@ -235,9 +245,8 @@ def text_filters(shot: dict, dur: float, W: int, H: int, work: Path, idx: int, s
     t_out = dur - 0.35
     filters, y = [], top
     for n, (key, size, color) in enumerate(lines):
-        text = str(shot[key]).upper() if key == "kicker" else str(shot[key])
         tf = work / f"text-{idx:02d}-{key}.txt"
-        tf.write_text(text, encoding="utf-8")
+        tf.write_text(texts[key], encoding="utf-8")
         start = t_in + 0.12 * n
         x = "(w-text_w)/2" if centered else f"{round(W * 0.06)}"
         y_expr = f"{round(y)}+{round(base * 0.02)}*(1-clip((t-{start})/0.45,0,1))"
@@ -245,9 +254,10 @@ def text_filters(shot: dict, dur: float, W: int, H: int, work: Path, idx: int, s
             f"drawtext=fontfile='{style['font']}':textfile='{tf}':fontsize={size}:fontcolor={color}"
             f":x={x}:y='{y_expr}':alpha='{fade_alpha(start, t_out)}'"
             f":shadowcolor=black@0.55:shadowx=0:shadowy={max(2, size // 18)}"
-            + (":line_spacing=8" if key != "kicker" else "")
+            + (f":line_spacing={spacing}" if key != "kicker" else "")
+            + (":text_align=C" if centered else "")
         )
-        y += size + gap
+        y += heights[key] + gap
     return filters
 
 

@@ -27,7 +27,8 @@ from make_video import (  # noqa: E402
 
 SCHEMA_VERSION = 1
 SOURCE_SYSTEM = "home-video-studio"
-KIND_LABELS = {"overview": "Home overview", "build": "Build process"}
+KIND_LABELS = {"overview": "Home overview", "build": "Building process", "showcase": "Vibe final show",
+               "drone": "Drone + process", "walkthrough": "Walk-through"}
 
 
 def safe_id(text: str) -> str:

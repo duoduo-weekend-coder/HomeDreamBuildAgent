@@ -1,0 +1,74 @@
+{
+  "kind": "showcase",
+  "duration": 15,
+  "aspect": "9:16",
+  "info": {
+    "home_name": "",
+    "location": "",
+    "specs": "",
+    "builder": "",
+    "highlight": ""
+  },
+  "voice": {
+    "provider": "auto"
+  },
+  "music": null,
+  "shots": [
+    {
+      "source": "media/showcase/hero.jpg",
+      "duration": 3.0,
+      "motion": "zoom_in",
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{specs}"
+      ],
+      "subtitle": [
+        "{location}"
+      ],
+      "narration": [
+        "{highlight}.",
+        "Welcome to {home_name}.",
+        "Welcome home."
+      ]
+    },
+    {
+      "source": "media/showcase/living.jpg",
+      "duration": 2.5,
+      "motion": "pan_right",
+      "title": "Light"
+    },
+    {
+      "source": "media/showcase/kitchen.jpg",
+      "duration": 2.5,
+      "motion": "zoom_in",
+      "title": "Gather"
+    },
+    {
+      "source": "media/showcase/detail.jpg",
+      "duration": 2.0,
+      "motion": "pan_up"
+    },
+    {
+      "source": "media/showcase/best-view.jpg",
+      "duration": 3.0,
+      "motion": "zoom_out",
+      "title": "Stay"
+    },
+    {
+      "source": "card",
+      "duration": 3.0,
+      "layout": "center",
+      "title": [
+        "{highlight}",
+        "{home_name}",
+        "Built with care"
+      ],
+      "subtitle": [
+        "{builder}",
+        "{location}"
+      ],
+      "kicker": "Comment BUILD"
+    }
+  ]
+}
