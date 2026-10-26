@@ -1,6 +1,7 @@
 import { createWhatsAppNotifications } from './whatsapp-notifications.mjs';
 import { customerRecord, customerRecordText } from './customer-records.mjs';
-import { classifyIntent, emptyIntent } from './intent.mjs';
+import { classifyIntent, emptyIntent, validateIntent } from './intent.mjs';
+import { refusalText } from './safety.mjs';
 import { summarizeAcquisition } from './insights.mjs';
 import { randomUUID, createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
@@ -263,19 +264,41 @@ export function createAcquisitionService({ store, config, providers, env = {}, d
       let intent=emptyIntent();
       try{
         const choice=inbound.quickReply;
-        if(!inbound.formSubmission&&!inbound.developerTestReset&&!choice?.invalid){
-          if(choice && (choice.type!=='intent'||choice.intentValue)){
+        if(!inbound.formSubmission&&!inbound.developerTestReset){
+          intent=inbound.intent?.disposition ? validateIntent(inbound.intent) : await classifyIntent({env,text:get('messages',inbound.messageId)?.text||text,messages:conversationMessages(inbound.contactId),project:projectFor(inbound.contactId),conversation,safetyPolicy:config.get().safety,recordUsage:usage=>put('usage',{contactId:inbound.contactId,sourceMessageId:inbound.messageId,provider:'claude',purpose:'intent',usage})});
+          if(intent.disposition==='in_scope' && choice && !choice.invalid && (choice.type!=='intent'||choice.intentValue)){
             if(choice.type==='form')intent.form=choice.value==='yes'?'request':'decline';
             if(choice.type==='consultation'||choice.type==='questionnaire'&&choice.questionId==='specialist_call')intent.booking=choice.value==='yes'?'book':'none';
             if(choice.type==='slot')intent.slotId=choice.slotId;
             if(choice.type==='intent'){intent.projectInterest=choice.intentValue==='project';intent.browsingOnly=choice.intentValue==='browsing';}
-          }else intent=inbound.intent||await classifyIntent({env,text,messages:conversationMessages(inbound.contactId),project:projectFor(inbound.contactId),conversation,recordUsage:usage=>put('usage',{contactId:inbound.contactId,sourceMessageId:inbound.messageId,provider:'claude',purpose:'intent',usage})});
+          }
         }
-        const current=get('conversations',inbound.contactId);if(current.messageVersion!==inbound.version||current.ownershipVersion!==conversation.ownershipVersion){put('inbound_events',{...inbound,status:'superseded'});return;}
-        put('inbound_events',{...get('inbound_events',eventId),intent});
-        inbound.intent=intent;
-        const message=get('messages',inbound.messageId);if(message)put('messages',{...message,intent});
-      }catch(error){put('inbound_events',{...inbound,status:'failed',error:error.message});handoff(inbound.contactId,'Intent assessment could not complete; no automatic action was taken.','normal',{scope:'topic',topicKey:`intent:${inbound.id}`});return;}
+      }catch{
+        intent={...emptyIntent(),disposition:'unverified'};
+        inbound.safetyError='Safety assessment unavailable or invalid; no business action taken.';
+      }
+      const current=get('conversations',inbound.contactId);if(current.messageVersion!==inbound.version||current.ownershipVersion!==conversation.ownershipVersion){put('inbound_events',{...inbound,status:'superseded'});return;}
+      put('inbound_events',{...get('inbound_events',eventId),intent,...(inbound.safetyError?{safetyError:inbound.safetyError}:{})});
+      inbound.intent=intent;
+      const assessedMessage=get('messages',inbound.messageId);if(assessedMessage)put('messages',{...assessedMessage,intent});
+      if(intent.disposition!=='in_scope' && !intent.optOut){
+        const contact=requireRecord('contacts',inbound.contactId),fresh=requireRecord('conversations',inbound.contactId);
+        if(!contact.doNotContact && ['auto','review'].includes(fresh.mode)){
+          const message=put('messages',{id:`reply-${inbound.id}`,contactId:contact.id,projectId:inbound.projectId||fresh.projectId,direction:'outbound',author:'agent',text:refusalText(intent.disposition,config.get().safety),media:[],quickReplies:[],replyToVersion:inbound.version,sourceMessageId:inbound.messageId,sequence:Date.now(),status:fresh.mode==='review'?'draft':'pending',purpose:'reply',safetyRefusal:intent.disposition});
+          if(fresh.mode==='auto')await sendMessage(message);
+        }
+        event('message_refused',`Request declined: ${intent.disposition}`,inbound.contactId);
+        put('inbound_events',{...inbound,status:'complete',error:null,processedAt:now()});
+        return;
+      }
+      if(intent.disposition==='in_scope' && inbound.quickReply && !inbound.quickReply.invalid){
+        const choice=inbound.quickReply;let p=projectFor(inbound.contactId);
+        if(choice.type==='field')p=put('projects',applyFacts(p,[{fieldId:choice.fieldId,value:choice.value,status:choice.status}],config.get().schema,inbound.messageId,'customer_button'));
+        if(choice.type==='questionnaire'){
+          p=put('projects',{...p,questionnaireAnswers:{...p.questionnaireAnswers,[choice.questionId]:{value:choice.value,sourceMessageId:inbound.messageId,updatedAt:now()}}});
+          if(choice.questionId==='blueprints')put('projects',applyFacts(p,[{fieldId:'blueprints',value:choice.value==='yes'?'available':choice.value==='no'?'not_yet':'unknown',status:choice.value==='unknown'?'unknown':'confirmed'}],config.get().schema,inbound.messageId,'customer_button'));
+        }
+      }
       const rescheduleRequested=intent.booking==='reschedule';
       const bookingRequested=intent.booking!=='none';
       const selectedId=inbound.quickReply?.type==='slot'?inbound.quickReply.slotId:intent.slotId;
@@ -293,6 +316,7 @@ export function createAcquisitionService({ store, config, providers, env = {}, d
       async function call(name, input = {}) {
         const start = now(); let result;
         try {
+          if(intent.disposition!=='in_scope')throw new AppError('Business tools are unavailable for this request.',403);
           const latest = snapshot();
           if (latest.contact.doNotContact || latest.conversation.messageVersion !== inbound.version || latest.conversation.ownershipVersion !== expectedOwnership) throw new AppError('Conversation ownership or customer message changed; do not execute another action.', 409);
           if (!toolDefinitions(settings().quoteMode).some(tool => tool.name === name)) throw new AppError('Tool is disabled or unavailable.', 403);
@@ -544,11 +568,6 @@ export function createAcquisitionService({ store, config, providers, env = {}, d
       put('conversations', { ...conversation, messageVersion: version, sourcePostId, lastInboundAt: preserveReplyWindow ? conversation.lastInboundAt : receivedAt.toISOString(), replyWindowUntil: preserveReplyWindow ? conversation.replyWindowUntil : new Date(receivedAt.getTime() + 24 * 3600000).toISOString() });
       put('contacts', { ...contact, firstReplyAt: preserveReplyWindow ? contact.firstReplyAt : contact.firstReplyAt || receivedAt.toISOString(), lastInteractionAt: receivedAt.toISOString() });
       let project = projectFor(contact.id);
-      if (quickReply?.type === 'field') project = put('projects', applyFacts(project, [{ fieldId: quickReply.fieldId, value: quickReply.value, status: quickReply.status }], config.get().schema, messageId, 'customer_button'));
-      if (quickReply?.type === 'questionnaire') {
-        project = put('projects', { ...project, questionnaireAnswers: { ...project.questionnaireAnswers, [quickReply.questionId]: { value: quickReply.value, sourceMessageId: messageId, updatedAt: now() } } });
-        if (quickReply.questionId === 'blueprints') project = put('projects', applyFacts(project, [{ fieldId: 'blueprints', value: quickReply.value === 'yes' ? 'available' : quickReply.value === 'no' ? 'not_yet' : 'unknown', status: quickReply.value === 'unknown' ? 'unknown' : 'confirmed' }], config.get().schema, messageId, 'customer_button'));
-      }
       if (project.stage === 'prospect') setStage(project, 'engaged', 'Customer sent a direct message', messageId);
       markTasksObsolete(contact.id, 'Customer sent a new message');
       cancelDrafts(contact.id, 'Customer sent a newer message');

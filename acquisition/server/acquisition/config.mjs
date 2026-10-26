@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { AppError } from '../domain.mjs';
 import { validateReplyOptions } from './quick-replies.mjs';
+import { validateSafetyPolicy } from './safety.mjs';
 
 export function validateSchema(schema) {
   if (!schema || !Number.isInteger(schema.version) || schema.version < 1 || !Array.isArray(schema.fields) || !schema.fields.length || schema.fields.length > 50) throw new AppError('Checklist requires a positive version and 1–50 fields.');
@@ -27,7 +28,7 @@ export function createConfig(directory) {
   const load = name => JSON.parse(readFileSync(path.join(directory, name), 'utf8'));
   function reload() {
     try {
-      const next = { schema: validateSchema(load('qualification.schema.json')), business: load('business-profile.json'), templates: load('message-templates.json'), defaults: load('acquisition-settings.json'), demoRules: load('demo-extraction.json').rules, quickReplies: validateReplyOptions(load('quick-replies.json')), questionnaire: load('reference-questionnaire.json') };
+      const next = { schema: validateSchema(load('qualification.schema.json')), business: load('business-profile.json'), templates: load('message-templates.json'), defaults: load('acquisition-settings.json'), demoRules: load('demo-extraction.json').rules, quickReplies: validateReplyOptions(load('quick-replies.json')), questionnaire: load('reference-questionnaire.json'), safety: validateSafetyPolicy(load('safety-policy.json')) };
       if (next.questionnaire.version !== 1 || !Array.isArray(next.questionnaire.questions) || new Set(next.questionnaire.questions.map(q=>q.id)).size !== next.questionnaire.questions.length || next.questionnaire.questions.some(q=>!/^[a-z][a-z0-9_]{0,49}$/.test(q.id) || typeof q.question !== 'string' || typeof q.enabled !== 'boolean' || (q.formEnabled !== undefined && typeof q.formEnabled !== 'boolean') || (q.formQuestion !== undefined && (typeof q.formQuestion !== 'string' || !q.formQuestion.trim())))) throw new Error('Invalid reference questionnaire.');
       if(next.schema.fields.some(f=>[f.whenQuestionnaire?.questionId,f.skipWhenQuestionnaire?.questionId,f.answeredByQuestionnaire].filter(Boolean).some(id=>!next.questionnaire.questions.some(q=>q.id===id))))throw new Error('Checklist references an unknown questionnaire question.');
       if (!next.business.name || !Array.isArray(next.business.serviceAreas) || !next.templates.intro) throw new Error('Business profile or message templates are incomplete.');
