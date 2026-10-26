@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1000">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c4cfca"/><stop offset="1" stop-color="#e8e6d9"/></linearGradient><linearGradient id="glass" x2="1" y2="1"><stop stop-color="#29483e"/><stop offset="1" stop-color="#687b70"/></linearGradient><pattern id="wood" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="#b49c78"/><path d="M0 0V16" stroke="#8b785d" stroke-width="2"/></pattern></defs>
+<rect width="900" height="1000" fill="url(#sky)"/>
+<circle cx="690" cy="180" r="83" fill="#f2e7cf" opacity=".65"/>
+<path d="M0 700 70 480 140 650 210 380 290 690 350 510 410 720 660 690 730 430 790 620 850 390 900 600V1000H0" fill="#7e9180" opacity=".55"/>
+<path d="M0 780Q230 720 470 770T900 720V1000H0" fill="#677e69"/>
+<path d="m140 465 350-140 265 107-350 145Z" fill="#48534a"/>
+<path d="M140 465v330l265 108V577Z" fill="#e6e0cc"/>
+<path d="M405 577 755 432v331L405 903Z" fill="url(#wood)"/>
+<path d="m120 461 370-148 285 114-20 20-265-107-350 140Z" fill="#253b34"/>
+<path d="m170 520 197 79v103l-197-79Z" fill="url(#glass)"/>
+<path d="m170 660 197 79v108l-197-79Z" fill="url(#glass)"/>
+<path d="m445 595 264-110v240L445 835Z" fill="url(#glass)"/>
+<g stroke="#c1b79b" stroke-width="7"><path d="M530 560v240M620 520v240M445 715l264-110M235 546v104M300 572v104M235 687v107M300 713v107"/></g>
+<path d="m115 793 290 120 385-155v23L405 938 115 817Z" fill="#c9c1ab"/>
+<path d="m405 938 76-31 225 93H561Z" fill="#c6c8b7"/>
+<g fill="#344e3e"><ellipse cx="90" cy="810" rx="70" ry="30"/><ellipse cx="800" cy="770" rx="62" ry="28"/><ellipse cx="730" cy="844" rx="55" ry="28"/></g>
+<g fill="#e8e3d3" opacity=".6"><circle cx="95" cy="240" r="2"/><circle cx="105" cy="250" r="2"/><circle cx="115" cy="240" r="2"/></g>
+<text x="48" y="68" font-family="sans-serif" font-size="17" letter-spacing="4" fill="#385247">CEDAR HOUSE / CONCEPT</text>
+<text x="48" y="956" font-family="sans-serif" font-size="15" letter-spacing="2" fill="#f1efe4">SAMPLE ILLUSTRATION · NOT A BUILT PROJECT</text>
+</svg>

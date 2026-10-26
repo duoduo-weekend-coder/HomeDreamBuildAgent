@@ -1,0 +1,22 @@
+{
+  "version": "demo-2026-01",
+  "mode": "demo",
+  "currency": "USD",
+  "label": "Illustrative demo rates — not Triple Z pricing or a market estimate",
+  "serviceAreas": ["Seattle", "Bellevue", "Sammamish", "Kirkland", "Redmond", "Medina"],
+  "types": {
+    "custom_home": { "label": "Custom home", "lowPerSqft": 250, "highPerSqft": 350 },
+    "addition": { "label": "Home addition", "lowPerSqft": 200, "highPerSqft": 300 },
+    "remodel": { "label": "Major remodel", "lowPerSqft": 150, "highPerSqft": 250 }
+  },
+  "finishMultipliers": { "standard": 1, "premium": 1.25, "signature": 1.5 },
+  "siteAllowances": {
+    "ready": { "low": 10000, "high": 20000 },
+    "undeveloped": { "low": 30000, "high": 70000 },
+    "unknown": { "low": 20000, "high": 80000 }
+  },
+  "planningPercent": 0.08,
+  "contingencyPercent": 0.15,
+  "exclusions": ["Land purchase", "Financing costs", "Taxes", "Unidentified site conditions", "Changes beyond the stated scope"],
+  "note": "Demonstration only. An owner-approved rate card, site review, plans, and scope are required before a business estimate can be issued."
+}

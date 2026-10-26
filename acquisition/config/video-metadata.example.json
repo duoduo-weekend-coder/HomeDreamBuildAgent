@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "contentId": "demo-cedar-video",
+  "revision": 1,
+  "platform": "instagram",
+  "instagramMediaId": null,
+  "permalink": null,
+  "title": "Cedar House · video provenance demo",
+  "caption": "Synthetic metadata example. No real Instagram post or completed company project is represented.",
+  "durationSeconds": 12,
+  "video": { "driveFileId": null, "mimeType": "video/mp4" },
+  "posterDriveFileId": null,
+  "source": { "system": "video-production-agent", "recordId": "demo-production-001" },
+  "demo": true,
+  "rawAssets": [
+    { "id": "raw-exterior", "title": "Exterior concept illustration", "kind": "image", "driveFileId": null, "description": "Synthetic source reference, not a completed building.", "customerShareable": false },
+    { "id": "raw-interior", "title": "Interior reference placeholder", "kind": "video", "driveFileId": null, "description": "No actual footage installed in this demo.", "customerShareable": false }
+  ],
+  "facts": [],
+  "segments": [
+    { "id": "exterior", "startSeconds": 0, "endSeconds": 6, "description": "Exterior concept and facade", "transcript": "", "rawAssetIds": ["raw-exterior"], "rawRanges": [], "keyframes": [], "facts": [
+      { "id": "demo-style", "key": "exterior_style", "value": "modern concept illustration", "verified": true, "customerVisible": true, "sourceAssetIds": ["raw-exterior"] }
+    ] },
+    { "id": "interior", "startSeconds": 6, "endSeconds": 12, "description": "Interior walkthrough reference", "transcript": "", "rawAssetIds": ["raw-interior"], "rawRanges": [{ "assetId": "raw-interior", "startSeconds": 20, "endSeconds": 26 }], "keyframes": [], "facts": [] }
+  ]
+}

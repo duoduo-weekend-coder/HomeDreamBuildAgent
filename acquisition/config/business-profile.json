@@ -1,0 +1,82 @@
+{
+  "name": "Triple Z Build",
+  "assistantName": "Home Dream",
+  "website": "https://triplezbuild.com/",
+  "services": [
+    "Custom homes",
+    "Home additions",
+    "Major remodels"
+  ],
+  "serviceAreas": [
+    "Seattle",
+    "Bellevue",
+    "Sammamish",
+    "Kirkland",
+    "Redmond",
+    "Medina"
+  ],
+  "timezone": "America/Los_Angeles",
+  "meetingMinutes": 30,
+  "meetingTitle": "Initial project consultation",
+  "knowledge": [
+    {
+      "topic": "process",
+      "text": "The first step is a conversation about the client's goals, site, scope and priorities. Design, engineering and pre-construction planning follow as needed."
+    },
+    {
+      "topic": "pricing",
+      "text": "Automatic quoting is currently disabled. A team member reviews the scope before providing an estimate."
+    },
+    {
+      "topic": "plans",
+      "text": "Clients can share existing plans, a screenshot or a link. Plans and permits are not prerequisites for an initial conversation."
+    }
+  ],
+  "meetingWeekdays": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "meetingStartTimes": [
+    "10:00",
+    "10:30",
+    "11:00",
+    "11:30",
+    "12:00",
+    "12:30",
+    "13:00",
+    "13:30",
+    "14:00",
+    "14:30",
+    "15:00"
+  ],
+  "bookingHorizonDays": 14,
+  "consultation": {
+    "initialFee": 0,
+    "currency": "USD",
+    "description": "The initial consultation with a team member is free. Design, permits, engineering and construction are separately scoped; do not describe those services as free."
+  },
+  "serviceAreaAliases": {
+    "Seattle": [
+      "西雅图"
+    ],
+    "Bellevue": [
+      "贝尔维尤",
+      "贝尔维尔"
+    ],
+    "Sammamish": [
+      "萨马米什"
+    ],
+    "Kirkland": [
+      "柯克兰"
+    ],
+    "Redmond": [
+      "雷德蒙德"
+    ],
+    "Medina": [
+      "麦地那"
+    ]
+  }
+}

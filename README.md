@@ -1,5 +1,20 @@
 # HomeDreamBuildAgent
 
+## Instagram acquisition workspace
+
+The [acquisition agent](acquisition/README.md) is a separate, runnable Node.js application for Instagram DMs and comment replies, low-friction project discovery, customer records in Google Drive, Google Calendar consultations and human handoffs. Its dashboard includes conversation management, project stages, conversion insights and dismissible team notifications.
+
+```bash
+cd acquisition
+npm start
+```
+
+Requires Node.js 22.13+; opens at http://localhost:3000. The default demo runs without credentials. For live services, copy `acquisition/.env.example` to `acquisition/.env` and follow the [account setup guide](acquisition/docs/account-setup.md). Real credentials, customer records, browser sessions, recordings and original media are excluded from Git. The [video metadata contract](acquisition/docs/video-metadata.md) describes the input supported by the acquisition agent; producer metadata must match that contract before import.
+
+The video studio below remains at port 8000 with its own configuration.
+
+## Video studio
+
 Turns a folder of construction photos and drone footage into short marketing videos for a home: a 15s or 30s **build-process** video or **overview** (surroundings and room tour), horizontal or vertical, with animated titles, cross-fades and a brief narrated voiceover. Each video comes with a metadata file describing its timeline and source footage.
 
 A local web page collects what to make. Each request runs a headless agent (the Claude Code CLI) with the `home-video` skill, which reads the footage, picks shots, writes a storyboard and narration, renders the videos and checks them. You can send feedback from the page and the same agent revises the videos.

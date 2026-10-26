@@ -1,0 +1,62 @@
+{
+  "note": "Deterministic offline-demo rules only. Live Claude extraction uses qualification.schema.json directly.",
+  "rules": {
+    "location": [
+      {
+        "pattern": "\\b(Bellevue|Seattle|Sammamish|Kirkland|Redmond|Medina|Tacoma|Portland)\\b"
+      },
+      {
+        "pattern": "\\b(New York|NYC)\\b|纽约"
+      }
+    ],
+    "square_footage": [
+      {
+        "pattern": "([0-9][0-9,]*(?:\\.[0-9]+)?\\s*(?:sq\\.?\\s*ft|sqft|square feet|平方英尺|平方米|m²))"
+      }
+    ],
+    "layout": [
+      {
+        "pattern": "([0-9]+\\s*(?:bed(?:room)?s?|房|卧)(?:\\s*(?:and|,|/|和)?\\s*[0-9]+\\s*(?:bath(?:room)?s?|卫))?)"
+      }
+    ],
+    "budget": [
+      {
+        "pattern": "((?:\\$|USD\\s*)[0-9][0-9,.]*\\s*(?:million|[mk])?(?:\\s*[-–]\\s*\\$?[0-9][0-9,.]*\\s*[mk]?)?)"
+      },
+      {
+        "pattern": "(?:budget|预算).{0,20}(?:not sure|unknown|未定|不确定)",
+        "value": "Not decided",
+        "status": "unknown"
+      }
+    ],
+    "permit": [
+      {
+        "pattern": "(?:permit.{0,15}(?:approved|issued)|已经获批|许可已批)",
+        "value": "approved"
+      },
+      {
+        "pattern": "(?:permit.{0,20}(?:not started|not yet)|no permit|haven.t.{0,12}(?:permit|applied)|未申请|没.{0,4}permit)",
+        "value": "not_started"
+      },
+      {
+        "pattern": "(?:permit.{0,15}(?:in progress|pending|submitted)|申请中)",
+        "value": "in_progress"
+      }
+    ],
+    "blueprints": [
+      {
+        "pattern": "(?:have|got).{0,15}(?:plans|blueprints)|有图纸",
+        "value": "available"
+      },
+      {
+        "pattern": "no (?:plans|blueprints)|没有图纸",
+        "value": "not_yet"
+      }
+    ],
+    "available_time": [
+      {
+        "pattern": "((?:weekday|weekend|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)[^.!?]{0,50}(?:morning|afternoon|evening|[0-9]\\s*(?:am|pm)))"
+      }
+    ]
+  }
+}

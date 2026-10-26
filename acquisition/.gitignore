@@ -1,0 +1,30 @@
+node_modules/
+.env*
+!.env.example
+data/
+coverage/
+test-results/
+*.log
+.venv-browser/
+__pycache__/
+*.pyc
+
+# Private runtime data, account setup and generated presentation files.
+deliverables/
+presentation-*.txt
+tools/record-presentation.py
+tools/assemble-presentation.py
+docs/New Home Client Questionnaire.pdf
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.pem
+*.key
+secrets/
+credentials/
+browser-profile/
+storage-state*.json
+.venv/
+.DS_Store
+Thumbs.db

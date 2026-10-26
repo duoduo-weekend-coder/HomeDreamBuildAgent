@@ -1,0 +1,211 @@
+{
+  "version": 1,
+  "source": "docs/New Home Client Questionnaire.pdf",
+  "mode": "optional_reference_form_and_contextual_chat",
+  "notes": [
+    "Reference questions are optional; never require completion before booking.",
+    "Readiness is a customer preference, not a construction timeline promise.",
+    "Yes to financing means either financing option; do not infer cash versus loan.",
+    "Name, phone, email and signature are not required to begin a conversation.",
+    "Location, budget amounts, square footage, layout, contact information and scheduling details are collected in chat, not in this form.",
+    "number follows the discovery order; sourceNumber preserves the original PDF question number.",
+    "The form restores all 19 reference questions except specialist_call. Planning help is first and land ownership is second; playful questions close the form.",
+    "Use saved answers to choose one relevant chat follow-up. Ask about an owned lot only after land_owned=yes. Skip irrelevant or already answered questions; do not turn the form into another checklist in chat."
+  ],
+  "questions": [
+    {
+      "number": 1,
+      "id": "planning_help",
+      "question": "Would you like help figuring out where to start?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Would you like help figuring out where to start?",
+      "sourceNumber": 1
+    },
+    {
+      "number": 2,
+      "id": "land_owned",
+      "question": "Do you already own the land?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you already own the land?",
+      "sourceNumber": 5,
+      "chatWhen": "After Yes, ask for lot area if not already known. After No, unknown or skipped, do not ask for land size or site-preparation details. Desired home size is a separate preference."
+    },
+    {
+      "number": 3,
+      "id": "lot_ready",
+      "question": "Is the lot ready to build, including clearing, survey and utilities?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Is the lot ready to build (cleared, surveyed, utilities available)?",
+      "sourceNumber": 6,
+      "chatWhen": "Only if the customer owns land and site preparation is relevant."
+    },
+    {
+      "number": 4,
+      "id": "designer",
+      "question": "Do you already have a designer?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you already have a designer?",
+      "sourceNumber": 7
+    },
+    {
+      "number": 5,
+      "id": "blueprints",
+      "question": "Do you have complete blueprints?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you have complete blueprints?",
+      "sourceNumber": 8
+    },
+    {
+      "number": 6,
+      "id": "budget_set",
+      "question": "Have you set a budget for your new home?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Have you set a budget for your new home?",
+      "sourceNumber": 3
+    },
+    {
+      "number": 7,
+      "id": "financing_ready",
+      "question": "Is financing in place, through loan pre-approval or cash?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Are you pre-approved for a loan, or paying cash?",
+      "sourceNumber": 4,
+      "chatWhen": "Only if financing becomes relevant after discussing the budget; do not lead with financial screening."
+    },
+    {
+      "number": 8,
+      "id": "start_six_months",
+      "question": "Would you like to start building within six months?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you want to start building within 6 months?",
+      "sourceNumber": 9
+    },
+    {
+      "number": 9,
+      "id": "start_now",
+      "question": "Would you like to start building right away?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you want to start building right away?",
+      "sourceNumber": 17,
+      "chatWhen": "Clarify urgency in chat only when relevant; do not repeat the six-month question."
+    },
+    {
+      "number": 10,
+      "id": "finish_one_year",
+      "question": "Are you hoping to have the home completed within one year?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Does your home need to be completed within 1 year?",
+      "sourceNumber": 18,
+      "chatWhen": "Ask about a specific deadline in chat only when timeline matters; never promise feasibility."
+    },
+    {
+      "number": 11,
+      "id": "sell_first",
+      "question": "Do you need to sell your current home first?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you need to sell your current home first?",
+      "sourceNumber": 10
+    },
+    {
+      "number": 12,
+      "id": "real_estate_agent",
+      "question": "Do you have a real estate agent?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you have a real estate agent?",
+      "sourceNumber": 11,
+      "chatWhen": "Only when land purchase or selling the current home is discussed."
+    },
+    {
+      "number": 13,
+      "id": "other_decision_makers",
+      "question": "Will anyone else be making decisions with you?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Will anyone else be making decisions with you?",
+      "sourceNumber": 16
+    },
+    {
+      "number": 14,
+      "id": "built_before",
+      "question": "Have you built a custom home before?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Have you built a custom home before?",
+      "sourceNumber": 15,
+      "chatWhen": "Only when prior building experience would help tailor an answer."
+    },
+    {
+      "number": 15,
+      "id": "landscape",
+      "question": "Do you need landscape design?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you need landscape design?",
+      "sourceNumber": 12,
+      "chatWhen": "Only when outdoor space or landscaping is relevant to the project."
+    },
+    {
+      "number": 16,
+      "id": "backyard",
+      "question": "Would you like a patio, deck or outdoor living area?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you need a backyard built (patio, deck, outdoor living)?",
+      "sourceNumber": 13,
+      "chatWhen": "Only when the customer discusses outdoor living requirements."
+    },
+    {
+      "number": 17,
+      "id": "rooftop",
+      "question": "Would you like a rooftop deck or terrace?",
+      "enabled": true,
+      "formEnabled": true,
+      "formQuestion": "Do you want a rooftop deck or terrace?",
+      "sourceNumber": 14,
+      "chatWhen": "Only when rooftop space is relevant to the desired layout."
+    },
+    {
+      "number": 18,
+      "id": "enjoy_reels",
+      "question": "Did you enjoy our reels?",
+      "enabled": false,
+      "formEnabled": true,
+      "formQuestion": "Did you enjoy our reels? :)",
+      "sourceNumber": 19,
+      "chatWhen": "Optional playful closing in the form. Acknowledge warmly if useful; never treat this answer as buying intent, a booking request or permission to contact others."
+    },
+    {
+      "number": 19,
+      "id": "housewarming",
+      "question": "Will you invite us to your housewarming party?",
+      "enabled": false,
+      "formEnabled": true,
+      "formQuestion": "Will you invite us to your housewarming party? :)",
+      "sourceNumber": 20,
+      "chatWhen": "Optional playful closing in the form. Acknowledge warmly if useful; never treat this answer as buying intent, a booking request or permission to contact others."
+    },
+    {
+      "number": 20,
+      "id": "specialist_call",
+      "question": "Would you like a free initial consultation with a member of our team?",
+      "enabled": true,
+      "formEnabled": false,
+      "formQuestion": "Would you like to schedule a free initial consultation with a specialist?",
+      "sourceNumber": 2,
+      "chatWhen": "Invite a free initial consultation in chat only after discovery readiness allows it, or when the customer explicitly asks. Never include this in the form."
+    }
+  ],
+  "formTitle": "New Home Client Questionnaire"
+}

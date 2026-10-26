@@ -1,0 +1,257 @@
+{
+  "version": 1,
+  "unknown": [
+    {
+      "title": {
+        "en": "Not sure yet",
+        "zh": "还不确定"
+      },
+      "action": {
+        "type": "field",
+        "value": "Not sure yet",
+        "status": "unknown"
+      }
+    },
+    {
+      "title": {
+        "en": "Skip for now",
+        "zh": "暂时跳过"
+      },
+      "action": {
+        "type": "field",
+        "value": "Prefers not to share",
+        "status": "declined"
+      }
+    }
+  ],
+  "fields": {
+    "location": [
+      {
+        "title": {
+          "en": "Seattle",
+          "zh": "Seattle"
+        },
+        "action": {
+          "type": "field",
+          "value": "Seattle",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Bellevue",
+          "zh": "Bellevue"
+        },
+        "action": {
+          "type": "field",
+          "value": "Bellevue",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Kirkland",
+          "zh": "Kirkland"
+        },
+        "action": {
+          "type": "field",
+          "value": "Kirkland",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Redmond",
+          "zh": "Redmond"
+        },
+        "action": {
+          "type": "field",
+          "value": "Redmond",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Sammamish",
+          "zh": "Sammamish"
+        },
+        "action": {
+          "type": "field",
+          "value": "Sammamish",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Medina",
+          "zh": "Medina"
+        },
+        "action": {
+          "type": "field",
+          "value": "Medina",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Not sure yet",
+          "zh": "还不确定"
+        },
+        "action": {
+          "type": "field",
+          "value": "Not sure yet",
+          "status": "unknown"
+        }
+      }
+    ],
+    "permit": [
+      {
+        "title": {
+          "en": "Not started",
+          "zh": "尚未开始"
+        },
+        "action": {
+          "type": "field",
+          "value": "not_started",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "In progress",
+          "zh": "申请中"
+        },
+        "action": {
+          "type": "field",
+          "value": "in_progress",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Approved",
+          "zh": "已批准"
+        },
+        "action": {
+          "type": "field",
+          "value": "approved",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Not sure yet",
+          "zh": "还不确定"
+        },
+        "action": {
+          "type": "field",
+          "value": "unknown",
+          "status": "unknown"
+        }
+      }
+    ],
+    "blueprints": [
+      {
+        "title": {
+          "en": "Yes",
+          "zh": "有"
+        },
+        "action": {
+          "type": "field",
+          "value": "available",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Not yet",
+          "zh": "还没有"
+        },
+        "action": {
+          "type": "field",
+          "value": "not_yet",
+          "status": "confirmed"
+        }
+      },
+      {
+        "title": {
+          "en": "Not sure yet",
+          "zh": "还不确定"
+        },
+        "action": {
+          "type": "field",
+          "value": "unknown",
+          "status": "unknown"
+        }
+      }
+    ]
+  },
+  "consultation": [
+    {
+      "title": {
+        "en": "Yes, free consult",
+        "zh": "好，免费咨询"
+      },
+      "action": {
+        "type": "consultation",
+        "value": "yes"
+      }
+    },
+    {
+      "title": {
+        "en": "Not now",
+        "zh": "暂时不用"
+      },
+      "action": {
+        "type": "consultation",
+        "value": "no"
+      }
+    }
+  ],
+  "intro": [
+    {
+      "title": {
+        "en": "Plan a project",
+        "zh": "我有项目需求"
+      },
+      "action": {
+        "type": "intent",
+        "text": "I would like help planning a construction project.",
+        "intentValue": "project"
+      }
+    },
+    {
+      "title": {
+        "en": "Just browsing",
+        "zh": "先看看案例"
+      },
+      "action": {
+        "type": "intent",
+        "text": "I am just browsing for inspiration, not ready to plan a project.",
+        "intentValue": "browsing"
+      }
+    }
+  ],
+  "form": [
+    {
+      "title": {
+        "en": "Yes, short form",
+        "zh": "好，填简短表单"
+      },
+      "action": {
+        "type": "form",
+        "value": "yes"
+      }
+    },
+    {
+      "title": {
+        "en": "Keep chatting",
+        "zh": "继续在这里聊"
+      },
+      "action": {
+        "type": "form",
+        "value": "no"
+      }
+    }
+  ]
+}

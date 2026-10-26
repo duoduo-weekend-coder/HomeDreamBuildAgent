@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "title": "Construction project discovery",
+  "defaults": {
+    "maxQuestionsPerTurn": 1,
+    "allowUnknown": true,
+    "blockBookingWhenMissing": false,
+    "consultationReadiness": {
+      "fields": [
+        "location",
+        "budget",
+        "square_footage",
+        "layout",
+        "permit",
+        "blueprints"
+      ],
+      "minimumConfirmedFields": 3
+    },
+    "shortFormOffer": {
+      "enabled": true,
+      "afterCustomerMessages": 2,
+      "minimumMissingFields": 2
+    }
+  },
+  "fields": [
+    {
+      "id": "location",
+      "label": "Location",
+      "description": "City or area of the project; full address is optional",
+      "type": "text",
+      "priority": 100,
+      "askWhen": "project_discussion",
+      "question": "Which city or area is your project in?"
+    },
+    {
+      "id": "permit",
+      "label": "Permit",
+      "description": "Building permit status; never infer approval from a drawing",
+      "type": "enum",
+      "options": [
+        "not_started",
+        "in_progress",
+        "approved",
+        "unknown"
+      ],
+      "priority": 40,
+      "askWhen": "project_discussion",
+      "question": "Have you started the permit process, or is that still ahead?"
+    },
+    {
+      "id": "budget",
+      "label": "Budget",
+      "description": "Approximate budget range with currency, or still exploring",
+      "type": "text",
+      "priority": 50,
+      "askWhen": "project_discussion",
+      "question": "Do you have a rough budget in mind? It is fine if you are still exploring.",
+      "skipWhenQuestionnaire": {
+        "questionId": "budget_set",
+        "values": [
+          "no",
+          "unknown"
+        ]
+      }
+    },
+    {
+      "id": "square_footage",
+      "label": "Square footage",
+      "description": "Project area, including units and whether approximate",
+      "type": "text",
+      "priority": 70,
+      "askWhen": "project_discussion",
+      "question": "Roughly how much space are you planning? An estimate is absolutely fine."
+    },
+    {
+      "id": "layout",
+      "label": "Layout",
+      "description": "Desired rooms, floors, or space requirements",
+      "type": "text",
+      "priority": 60,
+      "askWhen": "project_discussion",
+      "question": "What sort of layout or rooms would you like?"
+    },
+    {
+      "id": "blueprints",
+      "label": "Blueprints",
+      "description": "Whether plans exist; file receipt is tracked separately under attachments",
+      "type": "enum",
+      "options": [
+        "available",
+        "not_yet",
+        "unknown"
+      ],
+      "priority": 30,
+      "askWhen": "project_discussion",
+      "question": "Do you already have plans? If so, a screenshot or link is fine.",
+      "answeredByQuestionnaire": "blueprints"
+    },
+    {
+      "id": "available_time",
+      "label": "Available time",
+      "description": "Preferred consultation time and timezone, not the construction start date",
+      "type": "availability",
+      "priority": 100,
+      "askWhen": "booking_requested",
+      "question": "Is there a day or time that is usually convenient for a short call?"
+    },
+    {
+      "id": "lot_area",
+      "label": "Lot area",
+      "description": "Area of an already owned plot of land, with units if provided. Separate from desired house floor area (square_footage); never copy one into the other.",
+      "type": "text",
+      "priority": 120,
+      "askWhen": "project_discussion",
+      "whenQuestionnaire": {
+        "questionId": "land_owned",
+        "values": [
+          "yes"
+        ]
+      },
+      "question": "About how large is your lot? Sq ft, square metres or acres are all fine; you can skip this if you’re not sure."
+    }
+  ]
+}

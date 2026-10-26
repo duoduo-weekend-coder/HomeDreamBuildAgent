@@ -1,0 +1,18 @@
+{
+  "intro": "Hi! I’m Home Dream, Triple Z Build’s automated project assistant. We help with custom homes, additions and major remodels around Seattle. See our work: https://triplezbuild.com/\nAre you planning a project or just exploring?",
+  "handoff": "I’ll ask the team to confirm this detail, and I can keep helping here. Would you like a free initial consultation with a member of our team?",
+  "optout": "Understood — we won’t send further outreach. Thank you for letting us know.",
+  "quoteDisabled": "The team will review the scope before providing a price. I can help arrange a free initial consultation with a team member.",
+  "followup": "Happy to continue with your project details whenever you’re ready.",
+  "handoffInternal": "I’ll ask the team to confirm that detail. I can keep helping with the rest of your project here.",
+  "shortFormOffer": "Would you like to fill out a quick Yes/No form? It takes about 1 minute and helps us understand the basics of your project. Just tap your answers or skip any question. You can also keep chatting here.",
+  "shortFormOfferZh": "愿意花约 1 分钟填个 Yes/No 简短问卷吗？帮助我们了解项目基本情况，点选即可，任何题目都可以跳过，也可以继续在这里聊。",
+  "shortFormLinkIntro": "Here’s our Yes/No form — about 1 minute to help us understand your project. Just tap your answers; you can skip any question. We’ll cover details like location, budget and size here in chat:",
+  "shortFormLinkIntroZh": "这是我们的 Yes/No 问卷，约 1 分钟，点选即可，任何题目都可以跳过。地点、预算、面积等具体信息，我们继续在私信里聊：",
+  "outsideServiceArea": "Triple Z Build currently serves {areas}. We don’t cover projects in {location}, so I’ll pause the project questions here.",
+  "outsideServiceAreaZh": "Triple Z Build 目前服务 {areas}。我们暂不覆盖 {location} 的项目，因此先不继续收集项目资料。",
+  "confirmProjectLocation": "Is {location} the intended location for your project, or are you still deciding? I’ll confirm coverage before asking for more project details.",
+  "confirmProjectLocationZh": "你的项目地点现在确定为 {location} 了吗，还是仍在考虑？我先确认服务范围，再继续了解项目细节。",
+  "liveChatHandoff": "I’ve added your request to the team’s inbox so someone can reply here in Instagram; an immediate response is not guaranteed. I can keep helping while you wait. Would you also like to book a free initial consultation?",
+  "liveChatWaiting": "I’ve added your request to the team’s inbox so someone can reply here in Instagram; an immediate response is not guaranteed. I can keep helping while you wait."
+}

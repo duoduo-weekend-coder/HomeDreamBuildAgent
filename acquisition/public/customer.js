@@ -1,0 +1,43 @@
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token=location.hash.slice(1), session, availability, selectedDay, selectedSlot;
+// Keep the capability in this tab only; never send it in a URL or referrer.
+try {if(token){sessionStorage.setItem('customerCapability',token);}else token=sessionStorage.getItem('customerCapability')||'';} catch {}
+if(location.hash)history.replaceState(null,'','/customer');
+async function api(route,body){const r=await fetch('/api/customer/'+route,{method:body?'POST':'GET',headers:{authorization:`Bearer ${token}`,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Please try again.');return d;}
+function failure(error){$('#error').textContent=error.message;}
+function booked(b){
+  const okay=['confirmed','simulated'].includes(b.status);
+  const title=b.status==='cancelled'?'This appointment was cancelled.':!okay?'The team is verifying your time change.':b.changeOutcome==='not_applied'?'Your original appointment is unchanged.':b.rescheduled?'Your appointment time is updated.':b.status==='simulated'?'Demo time saved.':'You’re booked.';
+  $('#content').innerHTML=`<section class="panel"><p class="eyebrow">${b.status==='simulated'?'DEMO APPOINTMENT':'YOUR CONSULTATION'}</p><h1>${title}</h1><p>${!okay&&b.status!=='cancelled'?'Previously confirmed time:<br>':''}${esc(new Date(b.start).toLocaleString('en-US',{timeZone:b.timezone,dateStyle:'full',timeStyle:'short'}))}<br>${esc(b.timezone)}</p><p>${okay?'Your initial consultation is free. You can continue chatting with the assistant in Instagram.':b.status==='cancelled'?'Return to Instagram if you would like to arrange another consultation.':'Please return to Instagram. The latest time has not been verified; do not submit another change yet.'}</p>${okay?'<button class="primary" id="change-time">Change appointment time</button>':''}</section>`;
+  if($('#change-time'))$('#change-time').onclick=()=>run(async()=>{
+    const link=await api('reschedule',{});token=new URL(link.url).hash.slice(1);sessionStorage.setItem('customerCapability',token);
+    session=await api('session');await loadCalendar();
+  });
+}
+async function loadCalendar(){availability=await api('slots');if(availability.booking){booked(availability.booking);return;}selectedDay=availability.slots[0]?.date||availability.days[0];selectedSlot=null;renderCalendar();}
+function renderCalendar(){const slots=availability.slots.filter(s=>s.date===selectedDay);$('#content').innerHTML=`<p class="eyebrow">FREE INITIAL CONSULTATION · ${session.durationMinutes} MINUTES</p><h1>${session.mode==='reschedule'?'Choose a new appointment time.':'A time that works for you.'}</h1>${session.mode==='reschedule'&&session.currentBooking?`<section class="panel"><strong>Current appointment</strong><p>${esc(new Date(session.currentBooking.start).toLocaleString('en-US',{timeZone:session.timezone,dateStyle:'full',timeStyle:'short'}))}</p><p>Your current appointment stays in place until you confirm a new time.</p></section>`:''}<p>Choose an available date and time, then confirm below. All times are in ${esc(session.timezone)}.</p>${session.simulation?'<p>This is a demo. No real calendar appointment will be created.</p>':''}<section class="panel"><h2>Available dates</h2><div class="calendar">${availability.days.map(day=>{const date=new Date(day+'T12:00:00Z'),count=availability.slots.filter(s=>s.date===day).length;return `<button class="day ${day===selectedDay?'selected':''}" data-day="${day}" ${count?'':'disabled'} aria-pressed="${day===selectedDay}"><span>${date.toLocaleDateString('en-US',{weekday:'short',timeZone:'UTC'})}</span><strong>${date.getUTCDate()}</strong><small>${date.toLocaleDateString('en-US',{month:'short',timeZone:'UTC'})} · ${count?count+' open':'No slots'}</small></button>`;}).join('')}</div><p><button class="quiet" id="refresh">Refresh availability</button></p></section><section class="panel"><h2>${selectedDay?esc(new Date(selectedDay+'T12:00:00Z').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'})):'Available times'}</h2><div class="times">${slots.map(s=>`<button class="time ${selectedSlot===s.id?'selected':''}" data-slot="${esc(s.id)}" aria-pressed="${selectedSlot===s.id}">${esc(new Date(s.start).toLocaleTimeString('en-US',{timeZone:s.timezone,hour:'numeric',minute:'2-digit'}))}<small>to ${esc(new Date(s.end).toLocaleTimeString('en-US',{timeZone:s.timezone,hour:'numeric',minute:'2-digit'}))}</small></button>`).join('')||'<p>No open times in this period. Return to Instagram and we’ll help find another time.</p>'}</div>${selectedSlot?`<div class="confirm"><span>Free initial consultation<br><small>Your time will be checked again before confirmation.</small></span><button class="primary" id="confirm">${session.mode==='reschedule'?'Confirm time change':'Confirm appointment'}</button></div>`:''}</section>`;
+  document.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>{selectedDay=b.dataset.day;selectedSlot=null;renderCalendar();});
+  document.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{selectedSlot=b.dataset.slot;renderCalendar();});
+  $('#refresh').onclick=()=>run(loadCalendar);
+  if($('#confirm'))$('#confirm').onclick=()=>run(async()=>{const result=await api('book',{slotId:selectedSlot});booked(result.booking);});
+}
+function renderIntake(){
+  if(session.status==='submitted'){saved();return;}
+  $('#content').innerHTML=`<p class="eyebrow">YES/NO FORM · ABOUT 1 MINUTE</p><h1>${esc(session.title)}</h1><p>Just tap Yes or No to help us understand your project. Not sure? You can skip any question. We’ll discuss location, budget, size and other details in Instagram — no typing needed here.</p><form id="intake" class="panel"><p class="answer-progress" aria-live="polite"></p><div class="questionnaire">${session.questions.map(q=>`<fieldset class="reference-question" data-question="${esc(q.id)}"><legend><span>${esc(q.number)}.</span> ${esc(q.question)}</legend><div class="answer-options">${[['yes','Yes'],['no','No'],['unknown','Not sure']].map(([value,label])=>`<label class="answer-choice"><input type="radio" name="answer-${esc(q.id)}" value="${value}" ${q.answer===value?'checked':''}><span>${label}</span></label>`).join('')}<button class="quiet skip-answer" type="button">Skip</button></div></fieldset>`).join('')}</div><div class="confirm"><span>All questions are optional.<br>No appointment is booked by submitting this form.</span><button class="primary" type="submit">Save my answers</button></div></form>`;
+  const progress=()=>{$('.answer-progress').textContent=`${document.querySelectorAll('.reference-question input:checked').length} of ${session.questions.length} answered · skip any question`;};
+  document.querySelectorAll('.reference-question').forEach(el=>{
+    el.querySelectorAll('input').forEach(input=>input.onchange=progress);
+    el.querySelector('.skip-answer').onclick=()=>{el.querySelectorAll('input').forEach(input=>input.checked=false);progress();};
+  });
+  progress();
+  $('#intake').onsubmit=e=>{e.preventDefault();run(async()=>{
+    const selected=[...document.querySelectorAll('.reference-question')].flatMap(el=>{const choice=el.querySelector('input:checked');return choice?[{questionId:el.dataset.question,value:choice.value}]:[];});
+    if(!selected.length){$('#error').textContent='Choose at least one answer, or return to Instagram to keep chatting.';return;}
+    const changed=selected.filter(a=>session.questions.find(q=>q.id===a.questionId).answer!==a.value);
+    await api('intake',{updates:changed.length?changed:selected});saved();
+  });};
+}
+function saved(){$('#content').innerHTML='<section class="panel"><p class="eyebrow">PROJECT DETAILS SAVED</p><h1>Thank you. We’ll pick up from here.</h1><p>Your Yes/No answers are saved. Return to Instagram to share details like location, budget and size — no need to repeat your answers here.</p></section>';}
+async function run(fn){$('#error').textContent='';const buttons=[...document.querySelectorAll('button')].map(button=>({button,disabled:button.disabled}));buttons.forEach(b=>b.button.disabled=true);try{await fn();}catch(e){failure(e);}finally{buttons.filter(b=>b.button.isConnected).forEach(b=>b.button.disabled=b.disabled);}}
+(async()=>{try{session=await api('session');if(session.booking)booked(session.booking);else if(session.kind==='booking')await loadCalendar();else renderIntake();}catch(e){$('#content').innerHTML='<h1>Please reopen your link from Instagram.</h1>';failure(e);}})();

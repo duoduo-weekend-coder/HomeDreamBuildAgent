@@ -1,0 +1,11 @@
+{
+  "mode": "demo",
+  "reviewOwner": "Project review desk",
+  "defaultOwner": "Project intake team",
+  "ownersByProjectType": {
+    "custom_home": "Custom homes team",
+    "addition": "Additions team",
+    "remodel": "Remodeling team"
+  },
+  "note": "Placeholder team names. Replace with company CRM owner IDs or team names in the adapter."
+}

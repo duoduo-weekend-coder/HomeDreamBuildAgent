@@ -1,0 +1,8 @@
+{
+  "quoteMode": "off",
+  "replyMode": "auto",
+  "outreachMode": "review",
+  "followupHours": 12,
+  "observationDays": 7,
+  "accountId": "demo-business-account"
+}
